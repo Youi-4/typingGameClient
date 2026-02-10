@@ -43,6 +43,9 @@ const SOCKET_URL = import.meta.env.VITE_API_URL
 
 const socket: Socket = io(SOCKET_URL, {
   withCredentials: true,
+  transports: ["polling", "websocket"], // start with polling, then upgrade
+  reconnectionAttempts: 10,
+  reconnectionDelay: 2000,
 });
 
 /* ------------------ Context ------------------ */
