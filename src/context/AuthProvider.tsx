@@ -108,7 +108,14 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       const data = await loginUser(values);
 
       if (data) {
-        await checkAuth();
+        // Use login response directly to set auth state
+        // instead of making a separate checkAuth() call
+        // which fails cross-origin due to cookie issues
+        setIsAuthenticated(true);
+        setUser(data as unknown as User);
+        setIsAuthError(false);
+        setAuthErrorMessage("");
+        console.log("Login successful, user set from login response");
       } else {
         throw new Error("Login failed");
       }
