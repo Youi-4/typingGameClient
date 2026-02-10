@@ -1,10 +1,9 @@
 import axios from "axios";
 
 const apiClient = axios.create({
-  baseURL: "http://localhost:3000/api", // Set the base URL for all API requests
-  // Additional default settings like headers or timeouts can be added here.
-  // For example, you could add a default header for authorization if needed:
-  // headers: { Authorization: `Bearer ${YOUR_AUTH_TOKEN}` }
+  baseURL: import.meta.env.VITE_SERVER_URL 
+    ? `${import.meta.env.VITE_SERVER_URL}/api` 
+    : "http://localhost:3000/api",
   withCredentials: true,
 });
 
