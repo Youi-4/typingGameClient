@@ -37,7 +37,9 @@ interface SharedSpaceContextType {
 
 /* ------------------ Socket ------------------ */
 
-const SOCKET_URL = import.meta.env.VITE_SERVER_URL || "http://localhost:3000";
+const SOCKET_URL = import.meta.env.VITE_API_URL
+  ? import.meta.env.VITE_API_URL.replace(/\/api$/, "")
+  : "http://localhost:3000";
 
 const socket: Socket = io(SOCKET_URL, {
   withCredentials: true,
