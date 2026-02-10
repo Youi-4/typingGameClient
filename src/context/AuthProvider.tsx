@@ -7,6 +7,7 @@ import  {
 import type {ReactNode} from "react"
 import { fetchUserAuth } from "../services/authApi";
 import { loginUser, logoutUser } from "../services/LoginApi";
+import { setupTokenRefresh, clearTokenRefresh, manualTokenRefresh } from "../utils/tokenRefresh";
 
 /* =====================
    Types & Interfaces
@@ -95,12 +96,31 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   useEffect(() => {
     console.log("useEffect triggered: checking auth status");
     checkAuth();
+    
+    // Try to refresh token if user is already authenticated
+    // This ensures the token stays fresh on app reload
+    const initTokenRefresh = async () => {
+      const refreshed = await manualTokenRefresh();
+      if (refreshed) {
+        setupTokenRefresh();
+      }
+    };
+    
+    initTokenRefresh();
+    
+    // Cleanup on unmount
+    return () => {
+      clearTokenRefresh();
+    };
   }, []);
 
   /* =====================
      Login
   ===================== */
-
+  
+        // Start auto token refresh after successful login
+        setupTokenRefresh();
+      
   const login = async (values: LoginValues): Promise<void> => {
     console.log("login function called");
     try {
@@ -138,6 +158,9 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   const logout = async (): Promise<void> => {
     console.log("logout function called");
     try {
+      
+      // Clear token refresh interval on logout
+      clearTokenRefresh();
       await logoutUser();
       setIsAuthenticated(false);
       setUser(null);
