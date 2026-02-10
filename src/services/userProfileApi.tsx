@@ -1,0 +1,32 @@
+import apiClient from "./apiClient";
+
+/**
+ * Adjust these types to match your backend API response
+ */
+export interface UserProfile {
+  // example fields:
+  // id: string;
+  // name: string;
+  [key: string]: any;
+}
+
+
+
+
+// Set/update the entire profile on the server
+export const setProfileOnServer = async (
+  selectedProfile: UserProfile
+): Promise<UserProfile> => {
+  console.log("Attempting to set profile:", selectedProfile);
+  const response = await apiClient.post("/profile/set", {
+    profile: selectedProfile,
+  });
+  return response.data;
+};
+
+// Get the current user profile from the server
+export const getProfileFromServer = async (): Promise<UserProfile> => {
+  const response = await apiClient.get("/profile/get");
+  return response.data;
+};
+
