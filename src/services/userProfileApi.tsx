@@ -18,7 +18,7 @@ export const setProfileOnServer = async (
   selectedProfile: UserProfile
 ): Promise<UserProfile> => {
   console.log("Attempting to set profile:", selectedProfile);
-  const response = await apiClient.post("/profile/set", {
+  const response = await apiClient.post("/user/profile/set", {
     profile: selectedProfile,
   });
   return response.data;
@@ -26,7 +26,7 @@ export const setProfileOnServer = async (
 
 // Get the current user profile from the server
 export const getProfileFromServer = async (): Promise<UserProfile> => {
-  const response = await apiClient.get("/profile/get");
+  const response = await apiClient.post("/user/profile/get");
   return response.data;
 };
 
