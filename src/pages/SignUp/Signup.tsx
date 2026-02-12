@@ -10,7 +10,7 @@ export interface AuthUser {
   email: string;
   password: string;
   user:string
-  verified: string;
+  verified: boolean;
 }
 export interface AuthContextValue {
   signup: (email: string, password: string) => Promise<void>;
@@ -91,7 +91,7 @@ export function SignUp() {
     initialValues: {
       email: '',
       password: '',
-      verified:'Verified',
+      verified:true,
       user:'',
     },
     onSubmit: values => {

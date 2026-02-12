@@ -3,7 +3,7 @@ export interface SignUpValues {
   email: string;
   password: string;
   user:string;
-  verified: string;
+  verified: boolean;
 }
 
 export const signUp = async (values:SignUpValues) => {
