@@ -82,7 +82,7 @@ const { login } = useAuthContext();
       //   setPassError(error.response.data.error?? " invalid Password");
       // if (error.response?.data?.id === "email")
       //   setEmailError(error.response.data.error?? " invalid Email");
-      // toast.error(`Sign Up failure, ${error.response?.data?.error}`,);
+      toast.error(`Login failure, ${error.response?.data?.error}`,);
       // setLoginAttempts((value) => value + 1);
     }
   };

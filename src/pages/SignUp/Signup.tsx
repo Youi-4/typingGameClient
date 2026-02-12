@@ -83,7 +83,7 @@ export function SignUp() {
       //   setPassError(error.response.data.error?? " invalid Password");
       // if (error.response?.data?.id === "email")
       //   setEmailError(error.response.data.error?? " invalid Password");
-      // toast.error(`Sign Up failure, ${error.response?.data?.error}`,);
+      toast.error(`Sign Up failure, ${error.response?.data?.error}`,);
       // setLoginAttempts((value) => value + 1);
     }
   };
