@@ -7,7 +7,6 @@ import React, {
 } from 'react';
 import './styles.css';
 import TypingArea from './TypingArea';
-import { paragraphs, paragraphWordMeans } from './sentences';
 import { useParams } from "react-router-dom";
 import { useSharedSpace } from './pages/SharedSpace/SharedSpaceProvider';
 const SpeedTypingGame: React.FC = () => {
@@ -18,10 +17,9 @@ const SpeedTypingGame: React.FC = () => {
         connected,
         roomId,
         setRoomId,
-        roomParagraphIndex,
-        setParagraphCount,
+        roomParagraph,
     } = useSharedSpace();
-    const sentence: string[] = paragraphs;
+    const sentence: string = roomParagraph;
     const [paragraphMean, setParagraphMean] = useState<number>(0);
     const [typingText, setTypingText] = useState<React.JSX.Element[] | string>([]);
     const [inpFieldValue, setInpFieldValue] = useState<string>('');
@@ -32,15 +30,15 @@ const SpeedTypingGame: React.FC = () => {
     const [isTyping, setIsTyping] = useState<boolean>(false);
     const [WPM, setWPM] = useState<number>(0);
     const [CPM, setCPM] = useState<number>(0);
-    const loadParagraph = (index: number): void => {
-        const ranIndex = Math.max(0, Math.min(index, paragraphs.length - 1));
+    const loadParagraph = (senten:string): void => {
         const inputField = document.getElementsByClassName('input-field')[0] as HTMLInputElement;
 
         const focusInput = () => inputField?.focus();
         document.addEventListener("keydown", focusInput);
-        setParagraphMean(paragraphWordMeans(sentence[ranIndex]))
+        const num :number = senten.split(' ').length+1;
+        setParagraphMean((senten.length-num)/num)
 
-        const content = Array.from(sentence[ranIndex]).map((letter, index) => (
+        const content = Array.from(senten).map((letter, index) => (
             <span
                 key={index}
                 style={{ color: (letter !== ' ') ? 'black' : 'transparent' }}
@@ -122,20 +120,19 @@ const SpeedTypingGame: React.FC = () => {
         setMistakes(0);
         setCPM(0);
         setWPM(0);
-        if (roomParagraphIndex === null) return;
-        loadParagraph(roomParagraphIndex);
+        if (roomParagraph === null) return;
+        loadParagraph(roomParagraph);
 
     };
 
     useEffect(() => {
         setRoomId(roomIdParam || "global");
-        setParagraphCount(paragraphs.length);
-    }, [roomIdParam, setRoomId, setParagraphCount]);
+    }, [roomIdParam, setRoomId]);
 
     useEffect(() => {
-        if (roomParagraphIndex === null) return;
-        loadParagraph(roomParagraphIndex);
-    }, [roomParagraphIndex]);
+        if (roomParagraph === null) return;
+        loadParagraph(roomParagraph);
+    }, [roomParagraph]);
 
     useEffect(() => {
         let wpm = Math.round(((charIndex - mistakes) / paragraphMean) / (maxTime - timeLeft) * 60);

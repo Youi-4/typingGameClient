@@ -2,11 +2,12 @@ import {
   createContext,
   useContext,
   useEffect,
+  useRef,
   useState,
 } from "react";
 import type {ReactNode} from "react";
 import { io, Socket } from "socket.io-client";
-
+import { useAuthContext } from "../../context/AuthProvider";
 /* ------------------ Types ------------------ */
 export interface TypeObject{
   mistakes:number;
@@ -22,7 +23,7 @@ export interface SharedMessage {
 
 export interface RoomState {
   roomId: string;
-  paragraphIndex: number;
+  paragraph: string;
 }
 
 interface SharedSpaceContextType {
@@ -31,22 +32,14 @@ interface SharedSpaceContextType {
   connected: boolean;
   roomId: string;
   setRoomId: (roomId: string) => void;
-  roomParagraphIndex: number | null;
-  setParagraphCount: (count: number) => void;
+  roomParagraph: string;
 }
 
-/* ------------------ Socket ------------------ */
+/* ------------------ Socket URL ------------------ */
 
 const SOCKET_URL = import.meta.env.VITE_API_URL
   ? import.meta.env.VITE_API_URL.replace(/\/api$/, "")
   : "http://localhost:3000";
-
-const socket: Socket = io(SOCKET_URL, {
-  withCredentials: true,
-  transports: ["polling", "websocket"], // start with polling, then upgrade
-  reconnectionAttempts: 10,
-  reconnectionDelay: 2000,
-});
 
 /* ------------------ Context ------------------ */
 
@@ -63,31 +56,43 @@ interface SharedSpaceProviderProps {
 export function SharedSpaceProvider({
   children,
 }: SharedSpaceProviderProps) {
+  const { isAuthenticated } = useAuthContext();
+  const socketRef = useRef<Socket | null>(null);
   const [sharedData, setSharedData] = useState<SharedMessage[]>([]);
   const [connected, setConnected] = useState<boolean>(false);
   const [roomId, setRoomId] = useState<string>("global");
-  const [roomParagraphIndex, setRoomParagraphIndex] = useState<number | null>(
-    null
-  );
-  const [paragraphCount, setParagraphCount] = useState<number>(0);
+  const [roomParagraph, setRoomParagraph] = useState<string>("");
 
+  // Create / destroy socket based on auth status
   useEffect(() => {
-    socket.on("connect", () => {
-      setConnected(true);
+    if (!isAuthenticated) {
+      // Not authenticated — disconnect and clean up
+      if (socketRef.current) {
+        socketRef.current.disconnect();
+        socketRef.current = null;
+      }
+      setConnected(false);
+      return;
+    }
+
+    // Authenticated — create the socket
+    const socket = io(SOCKET_URL, {
+      withCredentials: true,
+      transports: ["polling", "websocket"],
+      reconnectionAttempts: 10,
+      reconnectionDelay: 2000,
     });
+    socketRef.current = socket;
+
+    socket.on("connect", () => setConnected(true));
+    socket.on("disconnect", () => setConnected(false));
 
     socket.on("receive-message", (data: SharedMessage) => {
       setSharedData((prev) => [...prev, data]);
     });
 
-    socket.on("disconnect", () => {
-      setConnected(false);
-    });
-
     socket.on("room-state", (data: RoomState) => {
-      if (data.roomId === roomId) {
-        setRoomParagraphIndex(data.paragraphIndex);
-      }
+      setRoomParagraph(data.paragraph);
     });
 
     return () => {
@@ -95,17 +100,21 @@ export function SharedSpaceProvider({
       socket.off("receive-message");
       socket.off("disconnect");
       socket.off("room-state");
+      socket.disconnect();
+      socketRef.current = null;
+      setConnected(false);
     };
-  }, [roomId]);
+  }, [isAuthenticated]);
 
+  // Join room when connected or roomId changes
   useEffect(() => {
-    if (!connected) return;
-    socket.emit("join-room", { roomId, paragraphCount });
+    if (!connected || !socketRef.current) return;
+    socketRef.current.emit("join-room", { roomId });
     setSharedData([]);
-  }, [connected, roomId, paragraphCount]);
+  }, [connected, roomId]);
 
   const sendSharedData = (message: string, typeObject: TypeObject) => {
-    socket.emit("send-message", {
+    socketRef.current?.emit("send-message", {
       roomId,
       message,
       typeObject,
@@ -120,8 +129,7 @@ export function SharedSpaceProvider({
         connected,
         roomId,
         setRoomId,
-        roomParagraphIndex,
-        setParagraphCount,
+        roomParagraph,
       }}
     >
       {children}
