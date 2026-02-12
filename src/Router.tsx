@@ -9,11 +9,19 @@ import SignUp from "./pages/SignUp/Signup.js";
 import { Outlet } from "react-router-dom";
 import PrivateRoute from "./utils/PrivateRoute.jsx";
 import PublicRoute from "./utils/PublicRoute.jsx";
+import { Toaster } from "react-hot-toast";
+
 // Root layout component
 const RootLayout = () => (
   <>
     <Navigation />
     <Outlet />
+        <Toaster
+      position="bottom-left"
+      toastOptions={{
+        style: { padding: "16px" },
+      }}
+    />
   </>
 );
 

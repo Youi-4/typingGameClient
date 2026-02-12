@@ -1,5 +1,5 @@
 import { RouterProvider } from "react-router-dom";
-import { Toaster } from "react-hot-toast";
+
 import router from "./Router";
 import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 import { AuthProvider } from "./context/AuthProvider";
@@ -19,12 +19,6 @@ function App() {
         <UserProfileProvider>
           <SharedSpaceProvider>
             <RouterProvider router={router} />
-            <Toaster
-              position="bottom-left"
-              toastOptions={{
-                style: { padding: "16px" },
-              }}
-            />
             <ReactQueryDevtools initialIsOpen={false} />
           </SharedSpaceProvider>
         </UserProfileProvider>
