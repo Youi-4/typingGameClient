@@ -1,4 +1,5 @@
-import axios from 'axios';
+import apiClient from "../services/apiClient";
+
 
 /**
  * Token Refresh Utility
@@ -14,12 +15,7 @@ let refreshInterval: number | null = null;
  */
 export const refreshAuthToken = async (): Promise<boolean> => {
   try {
-    const response = await axios.post(
-      '/auth/refresh',
-      {},
-      { withCredentials: true }
-    );
-    
+    const response = await apiClient.post("/auth/refresh");
     if (response.data.success) {
       console.log('Token refreshed successfully');
       return true;
