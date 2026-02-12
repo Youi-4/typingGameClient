@@ -19,7 +19,6 @@ const SpeedTypingGame: React.FC = () => {
         setRoomId,
         roomParagraph,
     } = useSharedSpace();
-    const sentence: string = roomParagraph;
     const [paragraphMean, setParagraphMean] = useState<number>(0);
     const [typingText, setTypingText] = useState<React.JSX.Element[] | string>([]);
     const [inpFieldValue, setInpFieldValue] = useState<string>('');
