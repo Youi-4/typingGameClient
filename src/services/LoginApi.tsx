@@ -1,6 +1,5 @@
 import apiClient from "./apiClient";
 import { AxiosError } from "axios";
-
 /** ---- Types ---- */
 
 // Login form values
@@ -19,6 +18,8 @@ export interface AuthUser {
 /** ---- API calls ---- */
 
 // API call for logging in
+
+
 export const loginUser = async (
   values: LoginValues
 ): Promise<LoginValues> => {

@@ -12,7 +12,12 @@ export interface UserProfile {
 
 
 
-
+export const getProfileBySession = async (): Promise<UserProfile> => {
+  const response = await apiClient.post<UserProfile>("/user/profile/get/userBySession");
+  console.log("Profile by session response:", response);
+  console.log("Profile data:", response.data);
+  return response.data;
+};
 // Set/update the entire profile on the server
 export const setProfileOnServer = async (
   selectedProfile: UserProfile

@@ -1,16 +1,12 @@
-import React, {
-  createContext,
-  useState,
-  useEffect,
-  useContext,
-
-} from "react";
+import React, { createContext, useContext } from "react";
 import type { ReactNode } from "react";
-import { usePostData } from "../hooks/usePostData";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   getProfileFromServer,
   setProfileOnServer,
+  getProfileBySession
 } from "../services/userProfileApi";
+import { useAuthContext } from "./AuthProvider";
 
 /**
  * Adjust this to match the real profile shape
@@ -40,41 +36,28 @@ interface UserProfileProviderProps {
 export const UserProfileProvider: React.FC<UserProfileProviderProps> = ({
   children,
 }) => {
-  const [profile, setProfile] = useState<UserProfile | null>(null);
+  const queryClient = useQueryClient();
+  
+  const profileQuery = useQuery({
+    queryKey: ["userProfile"],
+    queryFn: getProfileBySession,
+  });
 
-  // Fetch the profile from the server when the component mounts
-  useEffect(() => {
-    const fetchProfile = async (): Promise<void> => {
-      try {
-        const profileData = await getProfileFromServer();
-        setProfile(profileData);
-        console.log("Profile fetched from server:", profileData);
-      } catch (error) {
-        console.error("Failed to fetch profile from server:", error);
-      }
-    };
-
-    fetchProfile();
-  }, []);
-
-  const mutation = usePostData(
-    setProfileOnServer,
-    ["studentPlacementSubjects"],
-    () => {
+  const mutation = useMutation({
+    mutationKey: ["userProfile", "set"],
+    mutationFn: setProfileOnServer,
+    onSuccess: (updatedProfile) => {
+      queryClient.setQueryData(["userProfile"], updatedProfile);
       console.log("Profile set successfully on server");
     },
-    false
-  );
+  });
 
-  const saveProfileToServer = mutation.mutate;
-  const isSettingProfile = mutation.status === "pending";
-  const isSettingProfileError = mutation.status === "error";
+  const isSettingProfile = mutation.isPending;
+  const isSettingProfileError = mutation.isError;
+  const profile = profileQuery.data ?? null;
 
   const handleProfileSelection = (selectedProfile: UserProfile): void => {
-    saveProfileToServer(selectedProfile, {
-      onSuccess: () => {
-        setProfile(selectedProfile);
-      },
+    mutation.mutate(selectedProfile, {
       onError: (error: unknown) => {
         console.error("Error setting profile on server:", error);
       },

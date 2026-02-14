@@ -19,7 +19,7 @@ function App() {
         <UserProfileProvider>
           <SharedSpaceProvider>
             <RouterProvider router={router} />
-            <ReactQueryDevtools initialIsOpen={false} />
+            <ReactQueryDevtools initialIsOpen={true} />
           </SharedSpaceProvider>
         </UserProfileProvider>
       </AuthProvider>

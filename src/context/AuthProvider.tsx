@@ -8,7 +8,7 @@ import type {ReactNode} from "react"
 import { fetchUserAuth } from "../services/authApi";
 import { loginUser, logoutUser } from "../services/LoginApi";
 import { setupTokenRefresh, clearTokenRefresh, manualTokenRefresh } from "../utils/tokenRefresh";
-
+import { useMutation } from "@tanstack/react-query";
 /* =====================
    Types & Interfaces
 ===================== */
@@ -28,6 +28,7 @@ interface LoginValues {
 interface AuthContextType {
   isAuthenticated: boolean;
   user: User | null;
+  sessionId: string | null;
   login: (values: LoginValues) => Promise<void>;
   logout: () => Promise<void>;
   isAuthPending: boolean;
@@ -52,10 +53,18 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export const AuthProvider = ({ children }: AuthProviderProps) => {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
   const [user, setUser] = useState<User | null>(null);
+  const [sessionId, setSessionId] = useState<string | null>(null);
   const [isAuthPending, setIsAuthPending] = useState<boolean>(true);
   const [isAuthError, setIsAuthError] = useState<boolean>(false);
   const [authErrorMessage, setAuthErrorMessage] = useState<string>("");
-
+  const loginMutation = useMutation({
+    mutationKey: ["login"],
+    mutationFn: loginUser,
+  });
+    const logOutMutation = useMutation({
+    mutationKey: ["logout"],
+    mutationFn: logoutUser,
+  });
 
 
   /* =====================
@@ -117,28 +126,19 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   /* =====================
      Login
   ===================== */
-  
-        // Start auto token refresh after successful login
-        setupTokenRefresh();
-      
   const login = async (values: LoginValues): Promise<void> => {
     console.log("login function called");
     try {
       setIsAuthPending(true);
-      const data = await loginUser(values);
-
-      if (data) {
-        // Use login response directly to set auth state
-        // instead of making a separate checkAuth() call
-        // which fails cross-origin due to cookie issues
-        setIsAuthenticated(true);
-        setUser(data as unknown as User);
-        setIsAuthError(false);
-        setAuthErrorMessage("");
-        console.log("Login successful, user set from login response");
-      } else {
-        throw new Error("Login failed");
-      }
+      const data = await loginMutation.mutateAsync(values);
+      // Use login response directly to set auth state instead of re-checking.
+      setIsAuthenticated(true);
+      setUser(data as unknown as User);
+      setSessionId((data as any)?.session_id || null);
+      setIsAuthError(false);
+      setAuthErrorMessage("");
+      setupTokenRefresh();
+      console.log("Login successful, user set from login response");
     } catch (error) {
       const err = error as Error;
       setIsAuthenticated(false);
@@ -161,9 +161,10 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       
       // Clear token refresh interval on logout
       clearTokenRefresh();
-      await logoutUser();
+      await logOutMutation.mutateAsync();
       setIsAuthenticated(false);
       setUser(null);
+      setSessionId(null);
     } catch (error) {
       console.error("logout onError:", error);
       setIsAuthError(true);
@@ -187,6 +188,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       value={{
         isAuthenticated,
         user,
+        sessionId,
         login,
         logout,
         isAuthPending,

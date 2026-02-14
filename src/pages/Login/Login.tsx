@@ -5,7 +5,6 @@ import toast from "react-hot-toast";
 // import { useState } from 'react';
 import { useAuthContext } from "../../context/AuthProvider";
 
-
 export interface AuthUser {
   userName_or_email: string;
   password: string;
@@ -46,7 +45,8 @@ export function Login() {
 //   return context;
 // };
 
-const { login } = useAuthContext();
+// const { login } = useAuthContext();
+  const { login, isAuthPending } = useAuthContext();
 
 
 
@@ -116,7 +116,9 @@ const { login } = useAuthContext();
           onChange={formik.handleChange} 
           value={formik.values.password} 
         />
-        <button id='loginbtn' type='submit'>Login</button>
+        <button id='loginbtn' type='submit' disabled={isAuthPending}>
+          {isAuthPending ? "Logging in..." : "Login"}
+        </button>
         <button id='loginbtn' type='button' onClick={() =>{navigate("/SignUp")}}>SignUp</button>
       </div>
     </form>
