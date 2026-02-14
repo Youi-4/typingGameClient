@@ -2,11 +2,9 @@ import React, { createContext, useContext } from "react";
 import type { ReactNode } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
-  getProfileFromServer,
   setProfileOnServer,
   getProfileBySession
 } from "../services/userProfileApi";
-import { useAuthContext } from "./AuthProvider";
 
 /**
  * Adjust this to match the real profile shape
