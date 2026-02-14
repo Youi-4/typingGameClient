@@ -30,3 +30,9 @@ export const fetchUserAuth = async (): Promise<AuthUser | AxiosError> => {
     throw error;
   }
 };
+
+// Fetch a short-lived token for Socket.IO auth (goes through Vercel proxy so cookies work)
+export const fetchSocketToken = async (): Promise<string> => {
+  const response = await apiClient.get<{ socketToken: string }>("/auth/socket-token");
+  return response.data.socketToken;
+};

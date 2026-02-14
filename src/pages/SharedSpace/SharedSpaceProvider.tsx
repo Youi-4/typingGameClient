@@ -8,6 +8,7 @@ import {
 import type {ReactNode} from "react";
 import { io, Socket } from "socket.io-client";
 import { useAuthContext } from "../../context/AuthProvider";
+import { fetchSocketToken } from "../../services/authApi";
 /* ------------------ Types ------------------ */
 export interface TypeObject{
   mistakes:number;
@@ -76,33 +77,51 @@ export function SharedSpaceProvider({
       return;
     }
 
-    // Authenticated — create the socket
-    const socket = io(SOCKET_URL, {
-      withCredentials: true,
-      transports: ["polling", "websocket"],
-      reconnectionAttempts: 10,
-      reconnectionDelay: 2000,
-    });
-    socketRef.current = socket;
+    let cancelled = false;
 
-    socket.on("connect", () => setConnected(true));
-    socket.on("disconnect", () => setConnected(false));
+    // Fetch a short-lived socket token via the API proxy (cookies work same-origin),
+    // then open the Socket.IO connection passing the token in `auth`.
+    const connectSocket = async () => {
+      try {
+        const socketToken = await fetchSocketToken();
+        if (cancelled) return;
 
-    socket.on("receive-message", (data: SharedMessage) => {
-      setSharedData((prev) => [...prev, data]);
-    });
+        const socket = io(SOCKET_URL, {
+          withCredentials: true,
+          auth: { token: socketToken },
+          transports: ["polling", "websocket"],
+          reconnectionAttempts: 10,
+          reconnectionDelay: 2000,
+        });
+        socketRef.current = socket;
 
-    socket.on("room-state", (data: RoomState) => {
-      setRoomParagraph(data.paragraph);
-    });
+        socket.on("connect", () => setConnected(true));
+        socket.on("disconnect", () => setConnected(false));
+
+        socket.on("receive-message", (data: SharedMessage) => {
+          setSharedData((prev) => [...prev, data]);
+        });
+
+        socket.on("room-state", (data: RoomState) => {
+          setRoomParagraph(data.paragraph);
+        });
+      } catch (err) {
+        console.error("Failed to get socket token:", err);
+      }
+    };
+
+    connectSocket();
 
     return () => {
-      socket.off("connect");
-      socket.off("receive-message");
-      socket.off("disconnect");
-      socket.off("room-state");
-      socket.disconnect();
-      socketRef.current = null;
+      cancelled = true;
+      if (socketRef.current) {
+        socketRef.current.off("connect");
+        socketRef.current.off("receive-message");
+        socketRef.current.off("disconnect");
+        socketRef.current.off("room-state");
+        socketRef.current.disconnect();
+        socketRef.current = null;
+      }
       setConnected(false);
     };
   }, [isAuthenticated]);
