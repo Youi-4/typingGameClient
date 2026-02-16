@@ -96,7 +96,10 @@ export function SharedSpaceProvider({
         socketRef.current = socket;
 
         socket.on("connect", () => setConnected(true));
-        socket.on("disconnect", () => setConnected(false));
+
+        socket.on("disconnect", () => {
+          setConnected(false);
+        });
 
         socket.on("receive-message", (data: SharedMessage) => {
           setSharedData((prev) => [...prev, data]);
@@ -131,7 +134,7 @@ export function SharedSpaceProvider({
     if (!connected || !socketRef.current) return;
     socketRef.current.emit("join-room", { roomId });
     setSharedData([]);
-  }, [connected, roomId]);
+  }, [roomId]);
 
   const sendSharedData = (message: string, typeObject: TypeObject) => {
     socketRef.current?.emit("send-message", {
