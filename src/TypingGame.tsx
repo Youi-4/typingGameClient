@@ -10,7 +10,11 @@ import TypingArea from './TypingArea';
 import { useParams } from "react-router-dom";
 import { useSharedSpace } from './pages/SharedSpace/SharedSpaceProvider';
 const SpeedTypingGame: React.FC = () => {
-    const { roomId: roomIdParam } = useParams();
+    // const { roomId: roomIdParam } = useParams();
+    // console.log(roomIdParam,"$$$$$$$$");
+    // if(roomIdParam === undefined){
+    //     console.log("HEYYYYYY")
+    // }
     const {
         sharedData,
         sendSharedData,
@@ -29,6 +33,8 @@ const SpeedTypingGame: React.FC = () => {
     const [isTyping, setIsTyping] = useState<boolean>(false);
     const [WPM, setWPM] = useState<number>(0);
     const [CPM, setCPM] = useState<number>(0);
+    // const [isDisabled, setIsDisabled] = useState(false);
+    sendSharedData( { mistakes, WPM, CPM })
     const loadParagraph = (senten:string): void => {
         const inputField = document.getElementsByClassName('input-field')[0] as HTMLInputElement;
 
@@ -125,8 +131,10 @@ const SpeedTypingGame: React.FC = () => {
     };
 
     useEffect(() => {
-        setRoomId(roomIdParam || "global");
-    }, [roomIdParam, setRoomId]);
+        setRoomId(roomId || "global");
+        
+    }, [roomId]);
+
 
     useEffect(() => {
         if (roomParagraph === null) return;
@@ -134,11 +142,12 @@ const SpeedTypingGame: React.FC = () => {
     }, [roomParagraph]);
 
     useEffect(() => {
+        
         let wpm = Math.round(((charIndex - mistakes) / paragraphMean) / (maxTime - timeLeft) * 60);
         setWPM(wpm < 0 || !wpm || wpm === Infinity ? 0 : wpm);
         let interval: ReturnType<typeof setInterval>;
         if (isTyping && timeLeft > 0) {
-            sendSharedData("Hello everyone!", { mistakes, WPM, CPM })
+            sendSharedData( { mistakes, WPM, CPM })
             interval = setInterval(() => {
                 setTimeLeft(prev => prev - 1);
             }, 1000);
@@ -157,14 +166,16 @@ const SpeedTypingGame: React.FC = () => {
         },
         {}
     );
-    
+        useEffect(() =>{
+
+    },[latestBySender]);
     return (
 
         <div className="container">
             <div className='lobby-form'>
                 <h2>Shared Space ({roomId}) {connected ? "🟢" : "🔴"}</h2>
 
-                <button onClick={() => sendSharedData("Hello everyone!", { mistakes, WPM, CPM })}>
+                <button onClick={() => sendSharedData( { mistakes, WPM, CPM })}>
                     Send
                 </button>
 
@@ -187,9 +198,11 @@ const SpeedTypingGame: React.FC = () => {
             <input
                 type="text"
                 className="input-field"
+                id="game-input-field"
                 value={inpFieldValue}
                 onChange={initTyping}
                 onKeyDown={handleKeyDown}
+                // disabled={isDisabled}
             />
             <TypingArea
                 typingText={typingText}

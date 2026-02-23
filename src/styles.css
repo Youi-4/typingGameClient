@@ -51,7 +51,11 @@ body {
   margin: 0;
   color: #3a4a5a;
 }
-
+#online-game-button{
+  width:80%;
+  font-size: 150%;
+  margin :1%;
+}
 .lobby-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));

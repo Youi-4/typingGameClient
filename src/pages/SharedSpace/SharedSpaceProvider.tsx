@@ -29,7 +29,7 @@ export interface RoomState {
 
 interface SharedSpaceContextType {
   sharedData: SharedMessage[];
-  sendSharedData: (message: string, typeObject:TypeObject) => void;
+  sendSharedData: (typeObject:TypeObject) => void;
   connected: boolean;
   roomId: string;
   setRoomId: (roomId: string) => void;
@@ -62,7 +62,7 @@ export function SharedSpaceProvider({
   const socketRef = useRef<Socket | null>(null);
   const [sharedData, setSharedData] = useState<SharedMessage[]>([]);
   const [connected, setConnected] = useState<boolean>(false);
-  const [roomId, setRoomId] = useState<string>("global");
+  const [roomId, setRoomId] = useState<string>("");
   const [roomParagraph, setRoomParagraph] = useState<string>("");
 
   // Create / destroy socket based on auth status
@@ -86,7 +86,7 @@ export function SharedSpaceProvider({
         const socketToken = await fetchSocketToken();
         if (cancelled) return;
 
-        const socket = io(SOCKET_URL, {
+        const socket = io(SOCKET_URL+"/public_game", {
           withCredentials: true,
           auth: { token: socketToken },
           transports: ["polling", "websocket"],
@@ -136,10 +136,10 @@ export function SharedSpaceProvider({
     setSharedData([]);
   }, [roomId]);
 
-  const sendSharedData = (message: string, typeObject: TypeObject) => {
+  const sendSharedData = (typeObject: TypeObject) => {
+    console.log("ROOOMMMMMIDDDD",roomId);
     socketRef.current?.emit("send-message", {
       roomId,
-      message,
       typeObject,
     });
   };

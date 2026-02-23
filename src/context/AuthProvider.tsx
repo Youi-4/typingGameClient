@@ -17,7 +17,7 @@ interface User {
   // adjust this to match your backend user object
   id: string;
   email: string;
-  name?: string;
+  userName?: string;
 }
 
 interface LoginValues {

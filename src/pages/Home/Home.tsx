@@ -1,7 +1,7 @@
 
 import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-
+import { createRoom } from "../../services/apiGeneral";
 function Home() {
   const navigate = useNavigate();
   const [roomInput, setRoomInput] = useState<string>("");
@@ -11,6 +11,7 @@ function Home() {
   }, []);
 
   const createLobby = () => {
+    console.log(generatedRoom,"IODJOISJF");
     navigate(`/Play/${generatedRoom}`);
   };
 
@@ -20,7 +21,10 @@ function Home() {
     if (!trimmed) return;
     navigate(`/Play/${trimmed}`);
   };
-
+   const onlineLobby = async () =>{
+    const roomId = await createRoom();
+    navigate(`/Play/${roomId}`);
+  };
   return (
     <div className="lobby-card">
       <div className="lobby-header">
@@ -29,7 +33,9 @@ function Home() {
           Create a room or join one to play together.
         </p>
       </div>
-
+          <button className="lobby-button" id="online-game-button" onClick={onlineLobby}>
+            Join online game
+          </button>
       <div className="lobby-grid">
         <div className="lobby-panel">
           <h2>Create a lobby</h2>

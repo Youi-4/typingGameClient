@@ -6,7 +6,7 @@ import SharedRoom from "./pages/SharedSpace/SharedRoom"
 import TypingGame from "./TypingGame"
 import Navigation from "./pages/Navigation/Navigation"
 import SignUp from "./pages/SignUp/Signup.js";
-import { Outlet } from "react-router-dom";
+import { Outlet,Navigate  } from "react-router-dom";
 import PrivateRoute from "./utils/PrivateRoute.jsx";
 import PublicRoute from "./utils/PublicRoute.jsx";
 import { Toaster } from "react-hot-toast";
@@ -31,6 +31,10 @@ const router = createBrowserRouter([
     element: <RootLayout />,
     errorElement: <NotFound />,
     children: [
+            {
+        index: true, // this matches "/" exactly
+        element: <Navigate to="/Login" replace />,
+      },
       {
         path: "/SignUp",
         element: (<PublicRoute><SignUp /></PublicRoute>),
