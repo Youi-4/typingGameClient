@@ -7,7 +7,7 @@ import React, {
 } from 'react';
 import './styles.css';
 import TypingArea from './TypingArea';
-import { useParams } from "react-router-dom";
+// import { useParams } from "react-router-dom";
 import { useSharedSpace } from './pages/SharedSpace/SharedSpaceProvider';
 const SpeedTypingGame: React.FC = () => {
     // const { roomId: roomIdParam } = useParams();
