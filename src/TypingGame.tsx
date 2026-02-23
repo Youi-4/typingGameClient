@@ -168,7 +168,7 @@ const SpeedTypingGame: React.FC = () => {
     );
         useEffect(() =>{
 
-    },[latestBySender]);
+    },[Object.entries(latestBySender)]);
     return (
 
         <div className="container">

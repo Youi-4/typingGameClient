@@ -105,6 +105,10 @@ export function SharedSpaceProvider({
           setSharedData((prev) => [...prev, data]);
         });
 
+        socket.on("user-left", ({ senderId }: { senderId: string }) => {
+          setSharedData((prev) => prev.filter((msg) => msg.senderId !== senderId));
+        });
+
         socket.on("room-state", (data: RoomState) => {
           setRoomParagraph(data.paragraph);
         });
@@ -120,6 +124,7 @@ export function SharedSpaceProvider({
       if (socketRef.current) {
         socketRef.current.off("connect");
         socketRef.current.off("receive-message");
+        socketRef.current.off("user-left");
         socketRef.current.off("disconnect");
         socketRef.current.off("room-state");
         socketRef.current.disconnect();
