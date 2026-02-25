@@ -4,7 +4,7 @@ import router from "./Router";
 import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 import { AuthProvider } from "./context/AuthProvider";
 import { UserProfileProvider } from "./context/UserProfileProvider";
-import { SharedSpaceProvider } from "./pages/SharedSpace/SharedSpaceProvider";
+import { SharedSpaceProvider } from "./services/SharedSpaceProvider";
 import {
   QueryClient,
   QueryClientProvider,

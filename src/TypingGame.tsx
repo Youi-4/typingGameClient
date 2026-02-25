@@ -8,7 +8,7 @@ import React, {
 import './styles.css';
 import TypingArea from './TypingArea';
 // import { useParams } from "react-router-dom";
-import { useSharedSpace } from './pages/SharedSpace/SharedSpaceProvider';
+import { useSharedSpace } from './services/SharedSpaceProvider';
 const SpeedTypingGame: React.FC = () => {
     // const { roomId: roomIdParam } = useParams();
     // console.log(roomIdParam,"$$$$$$$$");
@@ -34,9 +34,8 @@ const SpeedTypingGame: React.FC = () => {
     const [totalMistakes, setTotalMistakes] = useState<number>(0);
     const [isTyping, setIsTyping] = useState<boolean>(false);
     const [WPM, setWPM] = useState<number>(0);
-    const [CPM, setCPM] = useState<number>(0);
     const [isDisabled, setIsDisabled] = useState(true);
-    sendSharedData({ totalMistakes, WPM, CPM });
+    sendSharedData({ totalMistakes, WPM,  charIndex });
 
     const [step, setStep] = useState(0);
     const words = ["", "The Race begins in", "5", "4", "3", "2", "1", "Go!"];
@@ -113,7 +112,7 @@ const SpeedTypingGame: React.FC = () => {
                 characters[charIndex].classList.add('correct');
             } else {
                 setMistakes(prev => prev + 1);
-                setTotalMistakes(prev =>prev+1);
+                setTotalMistakes(prev => prev + 1);
                 characters[charIndex].classList.add('wrong');
             }
 
@@ -142,7 +141,6 @@ const SpeedTypingGame: React.FC = () => {
         setCharIndex(0);
         setMistakes(0);
         setTotalMistakes(0);
-        setCPM(0);
         setWPM(0);
         if (roomParagraph === null) return;
         loadParagraph(roomParagraph);
@@ -165,7 +163,7 @@ const SpeedTypingGame: React.FC = () => {
         setWPM(wpm < 0 || !wpm || wpm === Infinity ? 0 : wpm);
         let interval: ReturnType<typeof setInterval>;
         if (isTyping && timeLeft > 0) {
-            sendSharedData({ totalMistakes, WPM, CPM })
+            sendSharedData({ totalMistakes, WPM,  charIndex })
             interval = setInterval(() => {
                 setTimeLeft(prev => prev - 1);
             }, 1000);
@@ -199,7 +197,7 @@ const SpeedTypingGame: React.FC = () => {
                 )}</div>
                 <h2>Shared Space ({roomId}) {connected ? "🟢" : "🔴"}</h2>
 
-                <button onClick={() => sendSharedData({ totalMistakes, WPM, CPM })}>
+                <button onClick={() => sendSharedData({ totalMistakes, WPM, charIndex })}>
                     Send
                 </button>
 
@@ -208,11 +206,18 @@ const SpeedTypingGame: React.FC = () => {
                     <div key={senderId} className="play-panel">
 
                         <div className="play-items">
-                            <div className='play-item'>{item.senderName}</div>
+                            
+                            <div className='play-item'><b>{item.senderName}</b></div>
                             <div className='play-item'>
-                                <div>mistakes:{item.typeObject?.totalMistakes ?? 0} </div>
-                                <div >WPM:{item.typeObject?.WPM ?? 0}</div>
+                                <div><b>mistakes:{item.typeObject?.totalMistakes ?? 0} </b></div>
+                                <div > <b>WPM:{item.typeObject?.WPM ?? 0}</b></div>
+
                             </div>
+                            <div id='character'><img src="../public/vite.svg" alt="moving" style={{
+                                position: "absolute",
+                                transform: `translateX(${item.typeObject?.charIndex ?? 0}px)`,
+                                transition: "transform 0.2s ease-out"
+                            }} /></div>
 
                         </div>
                     </div>
@@ -234,7 +239,6 @@ const SpeedTypingGame: React.FC = () => {
                 timeLeft={timeLeft}
                 totalMistakes={totalMistakes}
                 WPM={WPM}
-                CPM={CPM}
                 resetGame={resetGame}
             />
 

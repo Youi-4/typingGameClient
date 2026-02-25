@@ -93,6 +93,9 @@ body {
   text-align: center;
   padding: 10px;
 }
+#character{
+  justify-content: center;
+}
 .lobby-panel h2 {
   margin: 0 0 8px;
   font-size: 20px;

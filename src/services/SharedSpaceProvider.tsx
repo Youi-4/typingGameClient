@@ -7,13 +7,13 @@ import {
 } from "react";
 import type {ReactNode} from "react";
 import { io, Socket } from "socket.io-client";
-import { useAuthContext } from "../../context/AuthProvider";
-import { fetchSocketToken } from "../../services/authApi";
+import { useAuthContext } from "../context/AuthProvider";
+import { fetchSocketToken } from "./authApi";
 /* ------------------ Types ------------------ */
 export interface TypeObject{
   totalMistakes:number;
   WPM:number;
-  CPM:number;
+  charIndex:number;
 }
 export interface SharedMessage {
   senderId: string;

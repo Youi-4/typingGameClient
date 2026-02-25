@@ -8,7 +8,6 @@ interface TypingAreaProps {
   timeLeft: number;
   totalMistakes: number;
   WPM: number;
-  CPM: number;
   resetGame: () => void;
   // Add '?' to make these optional
   initTyping?: (event: ChangeEvent<HTMLInputElement>) => void;
@@ -21,7 +20,6 @@ const TypingArea: React.FC<TypingAreaProps> = ({
 
   totalMistakes,
   WPM,
-  CPM,
   resetGame,
 }) => {
   return (
@@ -45,10 +43,6 @@ const TypingArea: React.FC<TypingAreaProps> = ({
           <li className="wpm">
             <p>WPM:</p>
             <span>{WPM}</span>
-          </li>
-          <li className="cpm">
-            <p>CPM:</p>
-            <span>{CPM}</span>
           </li>
         </ul>
         <button onClick={resetGame} className="btn">

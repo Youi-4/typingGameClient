@@ -2,7 +2,6 @@ import { createBrowserRouter } from "react-router-dom";
 import Home from "./pages/Home/Home"
 import Login from "./pages/Login/Login"
 import NotFound from "./pages/Not_Found/NotFound"
-import SharedRoom from "./pages/SharedSpace/SharedRoom"
 import TypingGame from "./TypingGame"
 import Navigation from "./pages/Navigation/Navigation"
 import SignUp from "./pages/SignUp/Signup.js";
@@ -54,14 +53,6 @@ const router = createBrowserRouter([
       {
         path: "/Play/:roomId",
         element: (<PrivateRoute><TypingGame /></PrivateRoute>),
-      },
-      {
-        path: "/Shared",
-        element: (<PrivateRoute><SharedRoom /></PrivateRoute>),
-      },
-      {
-        path: "/Shared/:roomId",
-        element: (<PrivateRoute><SharedRoom /></PrivateRoute>),
       },
       {
         path: "*",
