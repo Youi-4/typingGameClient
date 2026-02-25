@@ -35,14 +35,31 @@ const SpeedTypingGame: React.FC = () => {
     const [WPM, setWPM] = useState<number>(0);
     const [CPM, setCPM] = useState<number>(0);
     const [isDisabled, setIsDisabled] = useState(true);
-    sendSharedData( { mistakes, WPM, CPM })
-    const loadParagraph = (senten:string): void => {
+    sendSharedData({ mistakes, WPM, CPM });
+
+    const [step, setStep] = useState(0);
+    const words = ["The Race begins in", "5", "4", "3", "2", "1", "Go!"];
+
+    useEffect(() => {
+        if(step == words.length){
+            setIsDisabled(false);
+        }
+        else if (roomStatus === "filled" && step < words.length) {
+            const timer = setTimeout(() => {
+                setStep(step + 1);
+            }, (step === 0) ? 3000 : 1000);
+            
+            return () => clearTimeout(timer);
+        }
+
+    }, [step, roomStatus]);
+    const loadParagraph = (senten: string): void => {
         const inputField = document.getElementsByClassName('input-field')[0] as HTMLInputElement;
 
         const focusInput = () => inputField?.focus();
         document.addEventListener("keydown", focusInput);
-        const num :number = senten.split(' ').length+1;
-        setParagraphMean((senten.length-num)/num)
+        const num: number = senten.split(' ').length + 1;
+        setParagraphMean((senten.length - num) / num)
 
         const content = Array.from(senten).map((letter, index) => (
             <span
@@ -77,9 +94,6 @@ const SpeedTypingGame: React.FC = () => {
             characters[charIndex - 1].classList.add('active');
             setCharIndex(prev => prev - 1);
 
-            // Recalculate stats
-            let cpm = (charIndex - mistakes - 1) * (60 / (maxTime - timeLeft));
-            setCPM(cpm < 0 || !cpm || cpm === Infinity ? 0 : parseInt(cpm.toString(), 10));
         }
     }
 
@@ -133,15 +147,8 @@ const SpeedTypingGame: React.FC = () => {
 
     useEffect(() => {
         setRoomId(roomId || "global");
-        
     }, [roomId]);
 
-    useEffect(() => {
-    if(roomStatus === "filled"){
-        setIsDisabled(false);
-    }
-        
-    }, [roomStatus]);
 
     useEffect(() => {
         if (roomParagraph === null) return;
@@ -149,12 +156,12 @@ const SpeedTypingGame: React.FC = () => {
     }, [roomParagraph]);
 
     useEffect(() => {
-        
+
         let wpm = Math.round(((charIndex - mistakes) / paragraphMean) / (maxTime - timeLeft) * 60);
         setWPM(wpm < 0 || !wpm || wpm === Infinity ? 0 : wpm);
         let interval: ReturnType<typeof setInterval>;
         if (isTyping && timeLeft > 0) {
-            sendSharedData( { mistakes, WPM, CPM })
+            sendSharedData({ mistakes, WPM, CPM })
             interval = setInterval(() => {
                 setTimeLeft(prev => prev - 1);
             }, 1000);
@@ -164,7 +171,7 @@ const SpeedTypingGame: React.FC = () => {
         return () => clearInterval(interval);
     }, [isTyping, timeLeft]);
 
-    
+
     const latestBySender = sharedData.reduce<Record<string, (typeof sharedData)[number]>>(
         (acc, item) => {
             const key = item.senderId || "unknown";
@@ -173,21 +180,26 @@ const SpeedTypingGame: React.FC = () => {
         },
         {}
     );
-        useEffect(() =>{
+    useEffect(() => {
 
-    },[Object.entries(latestBySender)]);
+    }, [Object.entries(latestBySender)]);
     return (
 
         <div className="container">
+
             <div className='lobby-form'>
                 <h2>Shared Space ({roomId}) {connected ? "🟢" : "🔴"}</h2>
 
-                <button onClick={() => sendSharedData( { mistakes, WPM, CPM })}>
+                <button onClick={() => sendSharedData({ mistakes, WPM, CPM })}>
                     Send
                 </button>
-
+                <div>{step <= words.length && (
+                    <h2 key={step} className="animate">
+                        {words[step]}
+                    </h2>
+                )}</div>
                 {Object.entries(latestBySender).map(([senderId, item]) => (
-                    
+
                     <div key={senderId} className="play-panel">
 
                         <div className="play-items">

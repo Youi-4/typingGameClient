@@ -152,6 +152,23 @@ body {
   background: #ffffff;
   box-shadow: 0 10px 25px rgba(0,0,0,0.1);
 }
+.animate {
+  animation: pop 0.8s ease forwards;
+}
+
+@keyframes pop {
+  0% {
+    opacity: 0;
+    transform: scale(0.5);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.2);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
 
 /* The invisible input needs to be reachable but not visible */
 input.input-field {

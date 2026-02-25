@@ -1,7 +1,14 @@
 
-import { useMemo, useState } from "react";
+import { useMemo, useState,useContext, createContext } from "react";
 import { useNavigate } from "react-router-dom";
 import { createRoom } from "../../services/apiGeneral";
+interface RoomType{
+  roomType:string;
+}
+const RoomTypeContext = createContext <RoomType | undefined>(
+  undefined
+);
+
 function Home() {
   const navigate = useNavigate();
   const [roomInput, setRoomInput] = useState<string>("");
