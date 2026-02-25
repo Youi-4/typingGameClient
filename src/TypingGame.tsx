@@ -22,6 +22,7 @@ const SpeedTypingGame: React.FC = () => {
         roomId,
         setRoomId,
         roomParagraph,
+        roomStatus,
     } = useSharedSpace();
     const [paragraphMean, setParagraphMean] = useState<number>(0);
     const [typingText, setTypingText] = useState<React.JSX.Element[] | string>([]);
@@ -33,7 +34,7 @@ const SpeedTypingGame: React.FC = () => {
     const [isTyping, setIsTyping] = useState<boolean>(false);
     const [WPM, setWPM] = useState<number>(0);
     const [CPM, setCPM] = useState<number>(0);
-    // const [isDisabled, setIsDisabled] = useState(false);
+    const [isDisabled, setIsDisabled] = useState(true);
     sendSharedData( { mistakes, WPM, CPM })
     const loadParagraph = (senten:string): void => {
         const inputField = document.getElementsByClassName('input-field')[0] as HTMLInputElement;
@@ -135,6 +136,12 @@ const SpeedTypingGame: React.FC = () => {
         
     }, [roomId]);
 
+    useEffect(() => {
+    if(roomStatus === "filled"){
+        setIsDisabled(false);
+    }
+        
+    }, [roomStatus]);
 
     useEffect(() => {
         if (roomParagraph === null) return;
@@ -202,7 +209,7 @@ const SpeedTypingGame: React.FC = () => {
                 value={inpFieldValue}
                 onChange={initTyping}
                 onKeyDown={handleKeyDown}
-                // disabled={isDisabled}
+                disabled={isDisabled}
             />
             <TypingArea
                 typingText={typingText}

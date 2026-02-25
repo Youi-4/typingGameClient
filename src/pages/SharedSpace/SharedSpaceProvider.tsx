@@ -26,6 +26,9 @@ export interface RoomState {
   roomId: string;
   paragraph: string;
 }
+export interface RoomStatus{
+  status:string;
+}
 
 interface SharedSpaceContextType {
   sharedData: SharedMessage[];
@@ -34,6 +37,7 @@ interface SharedSpaceContextType {
   roomId: string;
   setRoomId: (roomId: string) => void;
   roomParagraph: string;
+  roomStatus:string;
 }
 
 /* ------------------ Socket URL ------------------ */
@@ -64,7 +68,7 @@ export function SharedSpaceProvider({
   const [connected, setConnected] = useState<boolean>(false);
   const [roomId, setRoomId] = useState<string>("");
   const [roomParagraph, setRoomParagraph] = useState<string>("");
-
+  const [roomStatus,setRoomStatus] = useState<string>("");
   // Create / destroy socket based on auth status
   useEffect(() => {
     if (!isAuthenticated) {
@@ -109,6 +113,9 @@ export function SharedSpaceProvider({
           setSharedData((prev) => prev.filter((msg) => msg.senderId !== senderId));
         });
 
+        socket.on("room-status", (data: RoomStatus) => {
+          setRoomStatus(data.status);
+        });
         socket.on("room-state", (data: RoomState) => {
           setRoomParagraph(data.paragraph);
         });
@@ -127,6 +134,7 @@ export function SharedSpaceProvider({
         socketRef.current.off("user-left");
         socketRef.current.off("disconnect");
         socketRef.current.off("room-state");
+        socketRef.current.off("room-status");
         socketRef.current.disconnect();
         socketRef.current = null;
       }
@@ -158,6 +166,7 @@ export function SharedSpaceProvider({
         roomId,
         setRoomId,
         roomParagraph,
+        roomStatus,
       }}
     >
       {children}
