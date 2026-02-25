@@ -11,7 +11,7 @@ import { useAuthContext } from "../../context/AuthProvider";
 import { fetchSocketToken } from "../../services/authApi";
 /* ------------------ Types ------------------ */
 export interface TypeObject{
-  mistakes:number;
+  totalMistakes:number;
   WPM:number;
   CPM:number;
 }

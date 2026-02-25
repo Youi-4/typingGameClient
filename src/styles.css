@@ -72,9 +72,9 @@ body {
 }
 .play-panel{
   background: #ffffff;
-  width:100%;
+  width:90%;
   margin:0;
-  
+  justify-content: center;
   border-radius: 20px;
   padding: 10px;
   border: 1px solid #e1e4e8;
@@ -106,10 +106,11 @@ body {
 
 .lobby-form {
   display: flex;
+  width: 100%;
+  justify-content: center;
   gap: 12px;
   flex-wrap: wrap;
 }
-
 .lobby-input {
   flex: 1 1 160px;
   padding: 12px 14px;
@@ -153,6 +154,7 @@ body {
   box-shadow: 0 10px 25px rgba(0,0,0,0.1);
 }
 .animate {
+  
   animation: pop 0.8s ease forwards;
 }
 

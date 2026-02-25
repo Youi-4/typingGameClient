@@ -6,7 +6,7 @@ interface TypingAreaProps {
   typingText: React.JSX.Element[] | string;
   inpFieldValue: string;
   timeLeft: number;
-  mistakes: number;
+  totalMistakes: number;
   WPM: number;
   CPM: number;
   resetGame: () => void;
@@ -18,7 +18,8 @@ interface TypingAreaProps {
 const TypingArea: React.FC<TypingAreaProps> = ({
   typingText,
   timeLeft,
-  mistakes,
+
+  totalMistakes,
   WPM,
   CPM,
   resetGame,
@@ -39,7 +40,7 @@ const TypingArea: React.FC<TypingAreaProps> = ({
           </li>
           <li className="mistake">
             <p>Mistakes:</p>
-            <span>{mistakes}</span>
+            <span>{totalMistakes}</span>
           </li>
           <li className="wpm">
             <p>WPM:</p>

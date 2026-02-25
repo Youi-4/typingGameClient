@@ -31,24 +31,25 @@ const SpeedTypingGame: React.FC = () => {
     const [timeLeft, setTimeLeft] = useState<number>(maxTime);
     const [charIndex, setCharIndex] = useState<number>(0);
     const [mistakes, setMistakes] = useState<number>(0);
+    const [totalMistakes, setTotalMistakes] = useState<number>(0);
     const [isTyping, setIsTyping] = useState<boolean>(false);
     const [WPM, setWPM] = useState<number>(0);
     const [CPM, setCPM] = useState<number>(0);
     const [isDisabled, setIsDisabled] = useState(true);
-    sendSharedData({ mistakes, WPM, CPM });
+    sendSharedData({ totalMistakes, WPM, CPM });
 
     const [step, setStep] = useState(0);
-    const words = ["The Race begins in", "5", "4", "3", "2", "1", "Go!"];
+    const words = ["", "The Race begins in", "5", "4", "3", "2", "1", "Go!"];
 
     useEffect(() => {
-        if(step == words.length){
+        if (step == words.length) {
             setIsDisabled(false);
         }
         else if (roomStatus === "filled" && step < words.length) {
             const timer = setTimeout(() => {
                 setStep(step + 1);
-            }, (step === 0) ? 3000 : 1000);
-            
+            }, (step === 1) ? 2000 : 1000);
+
             return () => clearTimeout(timer);
         }
 
@@ -75,6 +76,7 @@ const SpeedTypingGame: React.FC = () => {
         setInpFieldValue('');
         setCharIndex(0);
         setMistakes(0);
+        setTotalMistakes(0);
         setIsTyping(false);
     };
 
@@ -111,6 +113,7 @@ const SpeedTypingGame: React.FC = () => {
                 characters[charIndex].classList.add('correct');
             } else {
                 setMistakes(prev => prev + 1);
+                setTotalMistakes(prev =>prev+1);
                 characters[charIndex].classList.add('wrong');
             }
 
@@ -138,6 +141,7 @@ const SpeedTypingGame: React.FC = () => {
         setTimeLeft(maxTime);
         setCharIndex(0);
         setMistakes(0);
+        setTotalMistakes(0);
         setCPM(0);
         setWPM(0);
         if (roomParagraph === null) return;
@@ -161,7 +165,7 @@ const SpeedTypingGame: React.FC = () => {
         setWPM(wpm < 0 || !wpm || wpm === Infinity ? 0 : wpm);
         let interval: ReturnType<typeof setInterval>;
         if (isTyping && timeLeft > 0) {
-            sendSharedData({ mistakes, WPM, CPM })
+            sendSharedData({ totalMistakes, WPM, CPM })
             interval = setInterval(() => {
                 setTimeLeft(prev => prev - 1);
             }, 1000);
@@ -188,16 +192,17 @@ const SpeedTypingGame: React.FC = () => {
         <div className="container">
 
             <div className='lobby-form'>
-                <h2>Shared Space ({roomId}) {connected ? "🟢" : "🔴"}</h2>
-
-                <button onClick={() => sendSharedData({ mistakes, WPM, CPM })}>
-                    Send
-                </button>
-                <div>{step <= words.length && (
+                <div >{step <= words.length && (
                     <h2 key={step} className="animate">
                         {words[step]}
                     </h2>
                 )}</div>
+                <h2>Shared Space ({roomId}) {connected ? "🟢" : "🔴"}</h2>
+
+                <button onClick={() => sendSharedData({ totalMistakes, WPM, CPM })}>
+                    Send
+                </button>
+
                 {Object.entries(latestBySender).map(([senderId, item]) => (
 
                     <div key={senderId} className="play-panel">
@@ -205,7 +210,7 @@ const SpeedTypingGame: React.FC = () => {
                         <div className="play-items">
                             <div className='play-item'>{item.senderName}</div>
                             <div className='play-item'>
-                                <div>mistakes:{item.typeObject?.mistakes ?? 0} </div>
+                                <div>mistakes:{item.typeObject?.totalMistakes ?? 0} </div>
                                 <div >WPM:{item.typeObject?.WPM ?? 0}</div>
                             </div>
 
@@ -227,7 +232,7 @@ const SpeedTypingGame: React.FC = () => {
                 typingText={typingText}
                 inpFieldValue={inpFieldValue}
                 timeLeft={timeLeft}
-                mistakes={mistakes}
+                totalMistakes={totalMistakes}
                 WPM={WPM}
                 CPM={CPM}
                 resetGame={resetGame}
