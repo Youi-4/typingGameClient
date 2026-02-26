@@ -18,7 +18,7 @@ function Home() {
   }, []);
 
   const createLobby = () => {
-    console.log(generatedRoom,"IODJOISJF");
+    // console.log(generatedRoom,"IODJOISJF");
     navigate(`/Play/${generatedRoom}`);
   };
 

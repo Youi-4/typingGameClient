@@ -2,6 +2,7 @@
 import React, {
     useState,
     useEffect,
+    useRef,
     type ChangeEvent,
     type KeyboardEvent
 } from 'react';
@@ -34,15 +35,21 @@ const SpeedTypingGame: React.FC = () => {
     const [totalMistakes, setTotalMistakes] = useState<number>(0);
     const [isTyping, setIsTyping] = useState<boolean>(false);
     const [WPM, setWPM] = useState<number>(0);
-    const [isDisabled, setIsDisabled] = useState(true);
-    sendSharedData({ totalMistakes, WPM,  charIndex });
+    // const [isDisabled, setIsDisabled] = useState(true);
+    const trackRefs = useRef<Record<string, HTMLDivElement | null>>({});
+    const [charIndexBeforeMistake, setCharIndexBeforeMistake] = useState<number>(0);
+    sendSharedData({ totalMistakes, WPM, charIndex, charIndexBeforeMistake });
+
+    const containerRef = useRef<HTMLDivElement | null>(null);
+    
 
     const [step, setStep] = useState(0);
     const words = ["", "The Race begins in", "5", "4", "3", "2", "1", "Go!"];
 
     useEffect(() => {
+
         if (step == words.length) {
-            setIsDisabled(false);
+            // setIsDisabled(false);
         }
         else if (roomStatus === "filled" && step < words.length) {
             const timer = setTimeout(() => {
@@ -111,7 +118,9 @@ const SpeedTypingGame: React.FC = () => {
             if (typedChar === currentChar) {
                 characters[charIndex].classList.add('correct');
             } else {
+                if (mistakes == 0) { setCharIndexBeforeMistake(charIndex); }
                 setMistakes(prev => prev + 1);
+
                 setTotalMistakes(prev => prev + 1);
                 characters[charIndex].classList.add('wrong');
             }
@@ -163,7 +172,7 @@ const SpeedTypingGame: React.FC = () => {
         setWPM(wpm < 0 || !wpm || wpm === Infinity ? 0 : wpm);
         let interval: ReturnType<typeof setInterval>;
         if (isTyping && timeLeft > 0) {
-            sendSharedData({ totalMistakes, WPM,  charIndex })
+            sendSharedData({ totalMistakes, WPM, charIndex, charIndexBeforeMistake })
             interval = setInterval(() => {
                 setTimeLeft(prev => prev - 1);
             }, 1000);
@@ -182,9 +191,12 @@ const SpeedTypingGame: React.FC = () => {
         },
         {}
     );
+
     useEffect(() => {
 
     }, [Object.entries(latestBySender)]);
+
+    
     return (
 
         <div className="container">
@@ -197,7 +209,7 @@ const SpeedTypingGame: React.FC = () => {
                 )}</div>
                 <h2>Shared Space ({roomId}) {connected ? "🟢" : "🔴"}</h2>
 
-                <button onClick={() => sendSharedData({ totalMistakes, WPM, charIndex })}>
+                <button onClick={() => sendSharedData({ totalMistakes, WPM, charIndex, charIndexBeforeMistake })}>
                     Send
                 </button>
 
@@ -206,19 +218,37 @@ const SpeedTypingGame: React.FC = () => {
                     <div key={senderId} className="play-panel">
 
                         <div className="play-items">
-                            
+
                             <div className='play-item'><b>{item.senderName}</b></div>
                             <div className='play-item'>
                                 <div><b>mistakes:{item.typeObject?.totalMistakes ?? 0} </b></div>
                                 <div > <b>WPM:{item.typeObject?.WPM ?? 0}</b></div>
 
                             </div>
-                            <div id='character'><img src="../public/vite.svg" alt="moving" style={{
+                            {/* <div id='character'><img src="../public/vite.svg" alt="moving" style={{
                                 position: "absolute",
-                                transform: `translateX(${item.typeObject?.charIndex ?? 0}px)`,
+            
+                                transform: `(${//console.log(/((item.typeObject?.charIndex ?? 0)/roomParagraph.length)*100),
+                                    //console.log((charIndexBeforeMistake /roomParagraph.length)*100),
+                                    (mistakes >0)?((item.typeObject?.charIndexBeforeMistake ?? 0 )/roomParagraph.length)*100:((item.typeObject?.charIndex??0)/roomParagraph.length)*100}%)`,
                                 transition: "transform 0.2s ease-out"
-                            }} /></div>
-
+                            }} /></div> */}
+                            <div ref={(el: HTMLDivElement | null) => {
+                                trackRefs.current[senderId] = el;
+                            }} className="race-track">
+                                <img
+                                    src="../public/vite.svg"
+                                    alt="moving"
+                                    style={{
+                                        left: `${(
+                                            mistakes > 0
+                                                ? (item.typeObject?.charIndexBeforeMistake ?? 0)
+                                                : (item.typeObject?.charIndex ?? 0)
+                                        ) / (roomParagraph?.length ?? 1) * 100}%`,
+                                        transition: "left 0.2s ease-out"
+                                    }}
+                                />
+                            </div>
                         </div>
                     </div>
                 ))}
@@ -231,7 +261,7 @@ const SpeedTypingGame: React.FC = () => {
                 value={inpFieldValue}
                 onChange={initTyping}
                 onKeyDown={handleKeyDown}
-                disabled={isDisabled}
+            // disabled={isDisabled}
             />
             <TypingArea
                 typingText={typingText}

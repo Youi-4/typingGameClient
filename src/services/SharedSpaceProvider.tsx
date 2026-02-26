@@ -14,6 +14,7 @@ export interface TypeObject{
   totalMistakes:number;
   WPM:number;
   charIndex:number;
+  charIndexBeforeMistake:number;
 }
 export interface SharedMessage {
   senderId: string;
@@ -150,7 +151,7 @@ export function SharedSpaceProvider({
   }, [roomId]);
 
   const sendSharedData = (typeObject: TypeObject) => {
-    console.log("ROOOMMMMMIDDDD",roomId);
+    // console.log("ROOOMMMMMIDDDD",roomId);
     socketRef.current?.emit("send-message", {
       roomId,
       typeObject,
