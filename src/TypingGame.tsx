@@ -35,7 +35,7 @@ const SpeedTypingGame: React.FC = () => {
     const [totalMistakes, setTotalMistakes] = useState<number>(0);
     const [isTyping, setIsTyping] = useState<boolean>(false);
     const [WPM, setWPM] = useState<number>(0);
-    // const [isDisabled, setIsDisabled] = useState(true);
+     const [isDisabled, setIsDisabled] = useState(true);
     const trackRefs = useRef<Record<string, HTMLDivElement | null>>({});
     const [charIndexBeforeMistake, setCharIndexBeforeMistake] = useState<number>(0);
     sendSharedData({ totalMistakes, WPM, charIndex, charIndexBeforeMistake,mistakes });
@@ -48,7 +48,7 @@ const SpeedTypingGame: React.FC = () => {
     useEffect(() => {
 
         if (step == words.length) {
-            // setIsDisabled(false);
+             setIsDisabled(false);
         }
         else if (roomStatus === "filled" && step < words.length) {
             const timer = setTimeout(() => {
@@ -224,14 +224,6 @@ const SpeedTypingGame: React.FC = () => {
                                 <div > <b>WPM:{item.typeObject?.WPM ?? 0}</b></div>
 
                             </div>
-                            {/* <div id='character'><img src="../public/vite.svg" alt="moving" style={{
-                                position: "absolute",
-            
-                                transform: `(${//console.log(/((item.typeObject?.charIndex ?? 0)/roomParagraph.length)*100),
-                                    //console.log((charIndexBeforeMistake /roomParagraph.length)*100),
-                                    (mistakes >0)?((item.typeObject?.charIndexBeforeMistake ?? 0 )/roomParagraph.length)*100:((item.typeObject?.charIndex??0)/roomParagraph.length)*100}%)`,
-                                transition: "transform 0.2s ease-out"
-                            }} /></div> */}
                             <div ref={(el: HTMLDivElement | null) => {
                                 trackRefs.current[senderId] = el;
                             }} className="race-track">
@@ -260,7 +252,7 @@ const SpeedTypingGame: React.FC = () => {
                 value={inpFieldValue}
                 onChange={initTyping}
                 onKeyDown={handleKeyDown}
-            // disabled={isDisabled}
+             disabled={isDisabled}
             />
             <TypingArea
                 typingText={typingText}
