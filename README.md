@@ -1,9 +1,7 @@
-to view the online frontend working, please visit: https://typing-game-client-pi.vercel.app
-
 # Typing Game Client
 
 This is a web application that has CRUD operations for user accoounts and allows players to be put in a game where they can compete with other players to see who can type the fastest.
-
+to view the online frontend working, please visit: https://typing-game-client-pi.vercel.app
 ## Features
 - CRUD operations
 - JWT authorization
