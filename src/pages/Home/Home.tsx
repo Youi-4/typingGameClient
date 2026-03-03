@@ -1,35 +1,49 @@
 
-import { useMemo, useState,useContext, createContext } from "react";
+import { useState,useEffect,useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { createRoom } from "../../services/apiGeneral";
-interface RoomType{
-  roomType:string;
-}
-const RoomTypeContext = createContext <RoomType | undefined>(
-  undefined
-);
+import {useSharedSpace} from "../../services/SharedSpaceProvider"
 
 function Home() {
+  const { setNamespace } = useSharedSpace();
   const navigate = useNavigate();
   const [roomInput, setRoomInput] = useState<string>("");
 
-  const generatedRoom = useMemo(() => {
-    return Math.random().toString(36).slice(2, 8).toLowerCase();
-  }, []);
+const [generatedRoom, setGeneratedRoom] = useState<string>("");
+const hasCreated = useRef(false);
+useEffect(() => {
+  if (hasCreated.current) return;
+  hasCreated.current = true;
+  const generateRoom = async () => {
+    try {
+      const roomId = await createRoom("private");
+      console.log("API response roomId:", roomId);
+      setGeneratedRoom(roomId);
+    } catch (err) {
+      console.error("createRoom failed:", err);
+    }
+  };
+  generateRoom();
+}, []);
 
-  const createLobby = () => {
+  const createLobby = async() => {
     // console.log(generatedRoom,"IODJOISJF");
+    setNamespace("/private_game");
     navigate(`/Play/${generatedRoom}`);
   };
 
-  const joinLobby = (event: React.FormEvent<HTMLFormElement>) => {
+  const joinLobby = async(event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    
     const trimmed = roomInput.trim();
     if (!trimmed) return;
+    await createRoom(trimmed);
+    setNamespace("/private_game");
     navigate(`/Play/${trimmed}`);
   };
    const onlineLobby = async () =>{
-    const roomId = await createRoom();
+    const roomId = await createRoom("public");
+    setNamespace("/public_game");
     navigate(`/Play/${roomId}`);
   };
   return (

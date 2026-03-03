@@ -38,9 +38,8 @@ const SpeedTypingGame: React.FC = () => {
     // const [isDisabled, setIsDisabled] = useState(true);
     const trackRefs = useRef<Record<string, HTMLDivElement | null>>({});
     const [charIndexBeforeMistake, setCharIndexBeforeMistake] = useState<number>(0);
-    sendSharedData({ totalMistakes, WPM, charIndex, charIndexBeforeMistake });
+    sendSharedData({ totalMistakes, WPM, charIndex, charIndexBeforeMistake,mistakes });
 
-    const containerRef = useRef<HTMLDivElement | null>(null);
     
 
     const [step, setStep] = useState(0);
@@ -157,7 +156,7 @@ const SpeedTypingGame: React.FC = () => {
     };
 
     useEffect(() => {
-        setRoomId(roomId || "global");
+        setRoomId(roomId);
     }, [roomId]);
 
 
@@ -172,7 +171,7 @@ const SpeedTypingGame: React.FC = () => {
         setWPM(wpm < 0 || !wpm || wpm === Infinity ? 0 : wpm);
         let interval: ReturnType<typeof setInterval>;
         if (isTyping && timeLeft > 0) {
-            sendSharedData({ totalMistakes, WPM, charIndex, charIndexBeforeMistake })
+            sendSharedData({ totalMistakes, WPM, charIndex, charIndexBeforeMistake ,mistakes})
             interval = setInterval(() => {
                 setTimeLeft(prev => prev - 1);
             }, 1000);
@@ -209,7 +208,7 @@ const SpeedTypingGame: React.FC = () => {
                 )}</div>
                 <h2>Shared Space ({roomId}) {connected ? "🟢" : "🔴"}</h2>
 
-                <button onClick={() => sendSharedData({ totalMistakes, WPM, charIndex, charIndexBeforeMistake })}>
+                <button onClick={() => sendSharedData({ totalMistakes, WPM, charIndex, charIndexBeforeMistake,mistakes })}>
                     Send
                 </button>
 
@@ -241,9 +240,9 @@ const SpeedTypingGame: React.FC = () => {
                                     alt="moving"
                                     style={{
                                         left: `${(
-                                            mistakes > 0
-                                                ? (item.typeObject?.charIndexBeforeMistake ?? 0)
-                                                : (item.typeObject?.charIndex ?? 0)
+                                            item.typeObject.mistakes > 0
+                                                ? (item.typeObject.charIndexBeforeMistake )
+                                                : (item.typeObject.charIndex)
                                         ) / (roomParagraph?.length ?? 1) * 100}%`,
                                         transition: "left 0.2s ease-out"
                                     }}

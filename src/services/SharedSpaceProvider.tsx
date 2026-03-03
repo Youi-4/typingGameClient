@@ -5,40 +5,43 @@ import {
   useRef,
   useState,
 } from "react";
-import type {ReactNode} from "react";
+import type { ReactNode } from "react";
 import { io, Socket } from "socket.io-client";
 import { useAuthContext } from "../context/AuthProvider";
 import { fetchSocketToken } from "./authApi";
 /* ------------------ Types ------------------ */
-export interface TypeObject{
-  totalMistakes:number;
-  WPM:number;
-  charIndex:number;
-  charIndexBeforeMistake:number;
+export interface TypeObject {
+  totalMistakes: number;
+  WPM: number;
+  charIndex: number;
+  charIndexBeforeMistake: number;
+  mistakes: number;
 }
 export interface SharedMessage {
   senderId: string;
   senderName: string;
   message: string;
-  typeObject:TypeObject;
+  typeObject: TypeObject;
 }
 
 export interface RoomState {
   roomId: string;
   paragraph: string;
 }
-export interface RoomStatus{
-  status:string;
+export interface RoomStatus {
+  status: string;
 }
 
 interface SharedSpaceContextType {
   sharedData: SharedMessage[];
-  sendSharedData: (typeObject:TypeObject) => void;
+  sendSharedData: (typeObject: TypeObject) => void;
   connected: boolean;
   roomId: string;
   setRoomId: (roomId: string) => void;
   roomParagraph: string;
-  roomStatus:string;
+  roomStatus: string;
+  namespace: string;
+  setNamespace: (ns: string) => void;
 }
 
 /* ------------------ Socket URL ------------------ */
@@ -69,7 +72,8 @@ export function SharedSpaceProvider({
   const [connected, setConnected] = useState<boolean>(false);
   const [roomId, setRoomId] = useState<string>("");
   const [roomParagraph, setRoomParagraph] = useState<string>("");
-  const [roomStatus,setRoomStatus] = useState<string>("");
+  const [roomStatus, setRoomStatus] = useState<string>("");
+  const [namespace, setNamespace] = useState<string>("")
   // Create / destroy socket based on auth status
   useEffect(() => {
     if (!isAuthenticated) {
@@ -91,7 +95,7 @@ export function SharedSpaceProvider({
         const socketToken = await fetchSocketToken();
         if (cancelled) return;
 
-        const socket = io(SOCKET_URL+"/public_game", {
+        const socket = io(SOCKET_URL + namespace, {
           withCredentials: true,
           auth: { token: socketToken },
           transports: ["polling", "websocket"],
@@ -141,14 +145,14 @@ export function SharedSpaceProvider({
       }
       setConnected(false);
     };
-  }, [isAuthenticated]);
+  }, [isAuthenticated, namespace]);
 
   // Join room when connected or roomId changes
   useEffect(() => {
     if (!connected || !socketRef.current) return;
     socketRef.current.emit("join-room", { roomId });
     setSharedData([]);
-  }, [roomId]);
+  }, [roomId,connected]);
 
   const sendSharedData = (typeObject: TypeObject) => {
     // console.log("ROOOMMMMMIDDDD",roomId);
@@ -168,6 +172,8 @@ export function SharedSpaceProvider({
         setRoomId,
         roomParagraph,
         roomStatus,
+        namespace,
+        setNamespace
       }}
     >
       {children}
