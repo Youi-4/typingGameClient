@@ -35,7 +35,7 @@ const SpeedTypingGame: React.FC = () => {
     const [totalMistakes, setTotalMistakes] = useState<number>(0);
     const [isTyping, setIsTyping] = useState<boolean>(false);
     const [WPM, setWPM] = useState<number>(0);
-    //  const [isDisabled, setIsDisabled] = useState(true);
+     const [isDisabled, setIsDisabled] = useState(true);
     const trackRefs = useRef<Record<string, HTMLDivElement | null>>({});
     const [charIndexBeforeMistake, setCharIndexBeforeMistake] = useState<number>(0);
     sendSharedData({ totalMistakes, WPM, charIndex, charIndexBeforeMistake,mistakes });
@@ -48,7 +48,7 @@ const SpeedTypingGame: React.FC = () => {
     useEffect(() => {
 
         if (step == words.length) {
-            //  setIsDisabled(false);
+             setIsDisabled(false);
         }
         else if (roomStatus === "filled" && step < words.length) {
             const timer = setTimeout(() => {
@@ -252,7 +252,7 @@ const SpeedTypingGame: React.FC = () => {
                 value={inpFieldValue}
                 onChange={initTyping}
                 onKeyDown={handleKeyDown}
-            //  disabled={isDisabled}
+             disabled={isDisabled}
             />
             <TypingArea
                 typingText={typingText}
