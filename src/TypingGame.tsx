@@ -25,22 +25,29 @@ const SpeedTypingGame: React.FC = () => {
         roomParagraph,
         roomStatus,
     } = useSharedSpace();
+    const imgArrWalk = ["/walk_0.png", "/walk_1.png", "/walk_2.png", "/walk_3.png", "/walk_4.png", "/walk_5.png", "/walk_6.png", "/walk_7.png", "/walk_8.png", "/walk_9.png"];
+    const imgArrRun = ["/run_0.png", "/run_1.png", "/run_2.png", "/run_3.png", "/run_4.png", "/run_5.png", "/run_6.png", "/run_7.png", "/run_8.png", "/run_9.png"];
+    const idleImg = "/Idle_0.png";
+    const [localImgCounts, setLocalImgCounts] = useState<Record<string, number>>({});
     const [paragraphMean, setParagraphMean] = useState<number>(0);
     const [typingText, setTypingText] = useState<React.JSX.Element[] | string>([]);
     const [inpFieldValue, setInpFieldValue] = useState<string>('');
-    const maxTime: number = 60;
+    const maxTime: number = 90;
     const [timeLeft, setTimeLeft] = useState<number>(maxTime);
     const [charIndex, setCharIndex] = useState<number>(0);
     const [mistakes, setMistakes] = useState<number>(0);
     const [totalMistakes, setTotalMistakes] = useState<number>(0);
     const [isTyping, setIsTyping] = useState<boolean>(false);
     const [WPM, setWPM] = useState<number>(0);
-     const [isDisabled, setIsDisabled] = useState(true);
+    //  const [isDisabled, setIsDisabled] = useState(true);
     const trackRefs = useRef<Record<string, HTMLDivElement | null>>({});
     const [charIndexBeforeMistake, setCharIndexBeforeMistake] = useState<number>(0);
-    sendSharedData({ totalMistakes, WPM, charIndex, charIndexBeforeMistake,mistakes });
+    const [isActivelyTyping, setIsActivelyTyping] = useState(false);
+    const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-    
+
+    sendSharedData({ totalMistakes, WPM, charIndex, charIndexBeforeMistake, mistakes,isActivelyTyping });
+
 
     const [step, setStep] = useState(0);
     const words = ["", "The Race begins in", "5", "4", "3", "2", "1", "Go!"];
@@ -48,7 +55,7 @@ const SpeedTypingGame: React.FC = () => {
     useEffect(() => {
 
         if (step == words.length) {
-             setIsDisabled(false);
+            //  setIsDisabled(false);
         }
         else if (roomStatus === "filled" && step < words.length) {
             const timer = setTimeout(() => {
@@ -132,7 +139,11 @@ const SpeedTypingGame: React.FC = () => {
             } else {
                 setIsTyping(false);
             }
-
+            setIsActivelyTyping(true);
+            if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
+            typingTimeoutRef.current = setTimeout(() => {
+                setIsActivelyTyping(false);
+            }, 1500);
         } else {
             setIsTyping(false);
         }
@@ -166,13 +177,12 @@ const SpeedTypingGame: React.FC = () => {
     }, [roomParagraph]);
 
     useEffect(() => {
-
         let wpm = Math.round(((charIndex - mistakes) / paragraphMean) / (maxTime - timeLeft) * 60);
         setWPM(wpm < 0 || !wpm || wpm === Infinity ? 0 : wpm);
         let interval: ReturnType<typeof setInterval>;
         if (isTyping && timeLeft > 0) {
-            sendSharedData({ totalMistakes, WPM, charIndex, charIndexBeforeMistake ,mistakes})
             interval = setInterval(() => {
+                sendSharedData({ totalMistakes, WPM, charIndex, charIndexBeforeMistake, mistakes,isActivelyTyping });
                 setTimeLeft(prev => prev - 1);
             }, 1000);
         } else if (timeLeft === 0) {
@@ -192,10 +202,18 @@ const SpeedTypingGame: React.FC = () => {
     );
 
     useEffect(() => {
+        const senderIds = Object.keys(latestBySender);
 
-    }, [Object.entries(latestBySender)]);
-
-    
+        if (senderIds.length === 0) return;
+        const interval = setInterval(() => {
+            setLocalImgCounts(prev => {
+                const next = { ...prev };
+                senderIds.forEach(id => { next[id] = ((next[id] ?? 0) + 1) % 10; });
+                return next;
+            });
+        }, 200);
+        return () => clearInterval(interval);
+    }, [Object.keys(latestBySender).sort().join(',')]);
     return (
 
         <div className="container">
@@ -208,7 +226,7 @@ const SpeedTypingGame: React.FC = () => {
                 )}</div>
                 <h2>Shared Space ({roomId}) {connected ? "🟢" : "🔴"}</h2>
 
-                <button onClick={() => sendSharedData({ totalMistakes, WPM, charIndex, charIndexBeforeMistake,mistakes })}>
+                <button onClick={() => sendSharedData({ totalMistakes, WPM, charIndex, charIndexBeforeMistake, mistakes,isActivelyTyping })}>
                     Send
                 </button>
 
@@ -228,12 +246,12 @@ const SpeedTypingGame: React.FC = () => {
                                 trackRefs.current[senderId] = el;
                             }} className="race-track">
                                 <img
-                                    src="/vite.svg"
+                                    src={(item.typeObject.isActivelyTyping && !(item.typeObject.mistakes>0))?((item.typeObject.WPM > 45) ? imgArrRun[localImgCounts[senderId] ?? 0] : imgArrWalk[localImgCounts[senderId] ?? 0]):idleImg}
                                     alt="moving"
                                     style={{
                                         left: `${(
                                             item.typeObject.mistakes > 0
-                                                ? (item.typeObject.charIndexBeforeMistake )
+                                                ? (item.typeObject.charIndexBeforeMistake)
                                                 : (item.typeObject.charIndex)
                                         ) / (roomParagraph?.length ?? 1) * 100}%`,
                                         transition: "left 0.2s ease-out"
@@ -252,7 +270,7 @@ const SpeedTypingGame: React.FC = () => {
                 value={inpFieldValue}
                 onChange={initTyping}
                 onKeyDown={handleKeyDown}
-             disabled={isDisabled}
+            //  disabled={isDisabled}
             />
             <TypingArea
                 typingText={typingText}

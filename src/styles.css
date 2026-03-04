@@ -172,8 +172,8 @@ body {
 
 .race-track img {
   position: absolute;
-  top: 50%;
-  transform: translateY(-50%);
+  transform: translateY(-40%) translateX(-31%);
+  
 }
 @keyframes pop {
   0% {

@@ -16,6 +16,7 @@ export interface TypeObject {
   charIndex: number;
   charIndexBeforeMistake: number;
   mistakes: number;
+  isActivelyTyping:boolean;
 }
 export interface SharedMessage {
   senderId: string;
@@ -155,7 +156,6 @@ export function SharedSpaceProvider({
   }, [roomId,connected]);
 
   const sendSharedData = (typeObject: TypeObject) => {
-    // console.log("ROOOMMMMMIDDDD",roomId);
     socketRef.current?.emit("send-message", {
       roomId,
       typeObject,
@@ -173,7 +173,7 @@ export function SharedSpaceProvider({
         roomParagraph,
         roomStatus,
         namespace,
-        setNamespace
+        setNamespace,
       }}
     >
       {children}
