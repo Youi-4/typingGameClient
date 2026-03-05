@@ -21,6 +21,7 @@ export interface TypeObject {
 export interface SharedMessage {
   senderId: string;
   senderName: string;
+  characterNumber:number;
   message: string;
   typeObject: TypeObject;
 }
@@ -28,6 +29,7 @@ export interface SharedMessage {
 export interface RoomState {
   roomId: string;
   paragraph: string;
+  characterNumber:number;
 }
 export interface RoomStatus {
   status: string;
@@ -43,6 +45,7 @@ interface SharedSpaceContextType {
   roomStatus: string;
   namespace: string;
   setNamespace: (ns: string) => void;
+  characterNumber:number;
 }
 
 /* ------------------ Socket URL ------------------ */
@@ -75,6 +78,7 @@ export function SharedSpaceProvider({
   const [roomParagraph, setRoomParagraph] = useState<string>("");
   const [roomStatus, setRoomStatus] = useState<string>("");
   const [namespace, setNamespace] = useState<string>("")
+  const [characterNumber, setCharacterNumber] = useState<number>(0)
   // Create / destroy socket based on auth status
   useEffect(() => {
     if (!isAuthenticated) {
@@ -124,6 +128,7 @@ export function SharedSpaceProvider({
         });
         socket.on("room-state", (data: RoomState) => {
           setRoomParagraph(data.paragraph);
+          setCharacterNumber(data.characterNumber);
         });
       } catch (err) {
         console.error("Failed to get socket token:", err);
@@ -174,6 +179,7 @@ export function SharedSpaceProvider({
         roomStatus,
         namespace,
         setNamespace,
+        characterNumber
       }}
     >
       {children}
