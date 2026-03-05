@@ -10,7 +10,6 @@ import './styles.css';
 import TypingArea from './TypingArea';
 // import { useParams } from "react-router-dom";
 import { useSharedSpace } from './services/SharedSpaceProvider';
-import { motion } from "framer-motion";
 const SpeedTypingGame: React.FC = () => {
     // const { roomId: roomIdParam } = useParams();
     // console.log(roomIdParam,"$$$$$$$$");
@@ -20,7 +19,6 @@ const SpeedTypingGame: React.FC = () => {
     const {
         sharedData,
         sendSharedData,
-        connected,
         roomId,
         setRoomId,
         roomParagraph,
