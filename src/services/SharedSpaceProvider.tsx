@@ -8,7 +8,7 @@ import {
 import type { ReactNode } from "react";
 import { io, Socket } from "socket.io-client";
 import { useAuthContext } from "../context/AuthProvider";
-import { fetchSocketToken } from "./authApi";
+import { fetchSocketToken, fetchGuestToken } from "./authApi";
 /* ------------------ Types ------------------ */
 export interface TypeObject {
   totalMistakes: number;
@@ -79,25 +79,14 @@ export function SharedSpaceProvider({
   const [roomStatus, setRoomStatus] = useState<string>("");
   const [namespace, setNamespace] = useState<string>("")
   const [characterNumber, setCharacterNumber] = useState<number>(0)
-  // Create / destroy socket based on auth status
   useEffect(() => {
-    if (!isAuthenticated) {
-      // Not authenticated — disconnect and clean up
-      if (socketRef.current) {
-        socketRef.current.disconnect();
-        socketRef.current = null;
-      }
-      setConnected(false);
-      return;
-    }
-
     let cancelled = false;
 
-    // Fetch a short-lived socket token via the API proxy (cookies work same-origin),
-    // then open the Socket.IO connection passing the token in `auth`.
     const connectSocket = async () => {
       try {
-        const socketToken = await fetchSocketToken();
+        const socketToken = isAuthenticated
+          ? await fetchSocketToken()
+          : await fetchGuestToken();
         if (cancelled) return;
 
         const socket = io(SOCKET_URL + namespace, {

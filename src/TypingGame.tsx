@@ -10,6 +10,7 @@ import './styles.css';
 import TypingArea from './TypingArea';
 // import { useParams } from "react-router-dom";
 import { useSharedSpace } from './services/SharedSpaceProvider';
+import { motion } from "framer-motion";
 const SpeedTypingGame: React.FC = () => {
     // const { roomId: roomIdParam } = useParams();
     // console.log(roomIdParam,"$$$$$$$$");
@@ -52,7 +53,7 @@ const SpeedTypingGame: React.FC = () => {
 
 
     const [step, setStep] = useState(0);
-    const words = ["", "The Race begins in", "5", "4", "3", "2", "1", "Go!"];
+    const words = ["Waiting for Players to join...", "The Race begins in", "🔴🔴5🔴🔴", "🔴🔴4🔴🔴", "🔴🔴3🔴🔴", "🟡🟡2🟡🟡", "🟡🟡1🟡🟡", "🟢🟢Go!🟢🟢"];
 
     useEffect(() => {
 
@@ -182,7 +183,7 @@ const SpeedTypingGame: React.FC = () => {
         let wpm = Math.round(((charIndex - mistakes) / paragraphMean) / (maxTime - timeLeft) * 60);
         setWPM(wpm < 0 || !wpm || wpm === Infinity ? 0 : wpm);
         let interval: ReturnType<typeof setInterval>;
-        if (isTyping && timeLeft > 0) {
+        if ( isDisabled == false && timeLeft||isTyping && timeLeft > 0) {
             interval = setInterval(() => {
                 sendSharedData({ totalMistakes, WPM, charIndex, charIndexBeforeMistake, mistakes,isActivelyTyping });
                 setTimeLeft(prev => prev - 1);
@@ -191,7 +192,7 @@ const SpeedTypingGame: React.FC = () => {
             setIsTyping(false);
         }
         return () => clearInterval(interval);
-    }, [isTyping, timeLeft]);
+    }, [isTyping, timeLeft,isDisabled]);
 
 
     const latestBySender = sharedData.reduce<Record<string, (typeof sharedData)[number]>>(
@@ -225,12 +226,9 @@ const SpeedTypingGame: React.FC = () => {
                     <h2 key={step} className="animate">
                         {words[step]}
                     </h2>
+                    
                 )}</div>
-                <h2>Shared Space ({roomId}) {connected ? "🟢" : "🔴"}</h2>
 
-                <button onClick={() => sendSharedData({ totalMistakes, WPM, charIndex, charIndexBeforeMistake, mistakes,isActivelyTyping })}>
-                    Send
-                </button>
 
                 {Object.entries(latestBySender).map(([senderId, item]) => (
 

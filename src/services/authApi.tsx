@@ -36,3 +36,9 @@ export const fetchSocketToken = async (): Promise<string> => {
   const response = await apiClient.get<{ socketToken: string }>("/auth/socket-token");
   return response.data.socketToken;
 };
+
+// Fetch a short-lived guest token for Socket.IO auth (no account required)
+export const fetchGuestToken = async (): Promise<string> => {
+  const response = await apiClient.get<{ socketToken: string }>("/auth/guest-token");
+  return response.data.socketToken;
+};

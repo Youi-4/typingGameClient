@@ -43,7 +43,7 @@ body {
 
 .lobby-title {
   margin: 0 0 8px;
-  font-size: 32px;
+  font-size: 22px;
   color: #0b1b2b;
 }
 
@@ -400,7 +400,7 @@ button:focus-visible {
   display: none;
   position:fixed;
   background-color: #f9f9f9;
-  min-width: 200px;
+  min-width: 100px;
   box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
 }
 

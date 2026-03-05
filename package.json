@@ -14,6 +14,7 @@
     "@tanstack/react-query-devtools": "^5.91.3",
     "axios": "^1.13.4",
     "formik": "^2.4.9",
+    "framer-motion": "^12.35.0",
     "primereact": "^10.9.7",
     "react": "^19.2.3",
     "react-bootstrap": "^2.10.10",

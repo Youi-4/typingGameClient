@@ -5,7 +5,7 @@ import { createRoom } from "../../services/apiGeneral";
 import {useSharedSpace} from "../../services/SharedSpaceProvider"
 
 function Home() {
-  const { setNamespace } = useSharedSpace();
+  const { setNamespace,setRoomId } = useSharedSpace();
   const navigate = useNavigate();
   const [roomInput, setRoomInput] = useState<string>("");
 
@@ -29,6 +29,7 @@ useEffect(() => {
   const createLobby = async() => {
     // console.log(generatedRoom,"IODJOISJF");
     setNamespace("/private_game");
+    setRoomId(generatedRoom);
     navigate(`/Play/${generatedRoom}`);
   };
 
@@ -38,21 +39,20 @@ useEffect(() => {
     const trimmed = roomInput.trim();
     if (!trimmed) return;
     await createRoom(trimmed);
+    setRoomId(trimmed);
     setNamespace("/private_game");
     navigate(`/Play/${trimmed}`);
   };
    const onlineLobby = async () =>{
     const roomId = await createRoom("public");
     setNamespace("/public_game");
+    setRoomId(roomId)
     navigate(`/Play/${roomId}`);
   };
   return (
     <div className="lobby-card">
       <div className="lobby-header">
-        <h1 className="lobby-title">Shared Lobby</h1>
-        <p className="lobby-subtitle">
-          Create a room or join one to play together.
-        </p>
+        <h1 className="lobby-title">Create a room or join one to play together.</h1>
       </div>
           <button className="lobby-button" id="online-game-button" onClick={onlineLobby}>
             Join online game

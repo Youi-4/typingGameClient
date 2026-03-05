@@ -42,18 +42,16 @@ const router = createBrowserRouter([
         path: "/Login",
         element: (<PublicRoute><Login /></PublicRoute>),
       },
-      {
-        path: "/Home",
-        element: (<PrivateRoute><Home /></PrivateRoute>),
-      },
-      {
-        path: "/Play",
-        element: (<PrivateRoute><TypingGame /></PrivateRoute>),
-      },
-      {
-        path: "/Play/:roomId",
-        element: (<PrivateRoute><TypingGame /></PrivateRoute>),
-      },
+      // {
+      //   path: "/Home",
+      //   element: (<PrivateRoute><Home /></PrivateRoute>),
+      // },
+      // {
+      //   path: "/Play/:roomId",
+      //   element: (<PrivateRoute><TypingGame /></PrivateRoute>),
+      // },
+      { path: "/Home", element: <Home /> },
+{ path: "/Play/:roomId", element: <TypingGame /> },
       {
         path: "*",
         element: (<PrivateRoute><NotFound /></PrivateRoute>),
