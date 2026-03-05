@@ -45,7 +45,6 @@ const SpeedTypingGame: React.FC = () => {
     const [charIndexBeforeMistake, setCharIndexBeforeMistake] = useState<number>(0);
     const [isActivelyTyping, setIsActivelyTyping] = useState(false);
     const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-    const [paragraphLength, setParagraphLength] = useState<number>(0);
 
     sendSharedData({ totalMistakes, WPM, charIndex, charIndexBeforeMistake, mistakes,isActivelyTyping });
 
