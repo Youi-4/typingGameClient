@@ -32,7 +32,7 @@ const router = createBrowserRouter([
     children: [
             {
         index: true, // this matches "/" exactly
-        element: <Navigate to="/Login" replace />,
+        element: <Navigate to="/Home" replace />,
       },
       {
         path: "/SignUp",

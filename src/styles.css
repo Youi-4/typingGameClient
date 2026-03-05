@@ -172,7 +172,7 @@ body {
 
 .race-track img {
   position: absolute;
-  transform: translateY(-40%) translateX(-31%);
+  transform: translateY(-40%) translateX(-29%);
   
 }
 @keyframes pop {

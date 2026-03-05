@@ -45,7 +45,7 @@ const SpeedTypingGame: React.FC = () => {
     const [charIndexBeforeMistake, setCharIndexBeforeMistake] = useState<number>(0);
     const [isActivelyTyping, setIsActivelyTyping] = useState(false);
     const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
+    const [paragraphLength, setParagraphLength] = useState<number>(0);
 
     sendSharedData({ totalMistakes, WPM, charIndex, charIndexBeforeMistake, mistakes,isActivelyTyping });
 
@@ -181,7 +181,7 @@ const SpeedTypingGame: React.FC = () => {
         let wpm = Math.round(((charIndex - mistakes) / paragraphMean) / (maxTime - timeLeft) * 60);
         setWPM(wpm < 0 || !wpm || wpm === Infinity ? 0 : wpm);
         let interval: ReturnType<typeof setInterval>;
-        if ( isDisabled == false && timeLeft||isTyping && timeLeft > 0) {
+        if ( charIndex < roomParagraph.length &&(isDisabled == false && timeLeft||isTyping && timeLeft > 0)) {
             interval = setInterval(() => {
                 sendSharedData({ totalMistakes, WPM, charIndex, charIndexBeforeMistake, mistakes,isActivelyTyping });
                 setTimeLeft(prev => prev - 1);
