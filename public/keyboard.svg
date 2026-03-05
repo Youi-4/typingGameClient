@@ -1,0 +1,49 @@
+<svg width="420" height="170" viewBox="0 0 420 170" xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges">
+
+  <!-- Keyboard base -->
+  <rect x="10" y="10" width="400" height="150" fill="#2c2c54" stroke="#000" stroke-width="4"></rect>
+
+  <!-- Row 1 -->
+  <rect x="20" y="20" width="30" height="22" fill="#ff6b6b"></rect>
+  <rect x="55" y="20" width="30" height="22" fill="#feca57"></rect>
+  <rect x="90" y="20" width="30" height="22" fill="#48dbfb"></rect>
+  <rect x="125" y="20" width="30" height="22" fill="#1dd1a1"></rect>
+  <rect x="160" y="20" width="30" height="22" fill="#ff9ff3"></rect>
+  <rect x="195" y="20" width="30" height="22" fill="#54a0ff"></rect>
+  <rect x="230" y="20" width="30" height="22" fill="#5f27cd"></rect>
+  <rect x="265" y="20" width="30" height="22" fill="#ff6b6b"></rect>
+  <rect x="300" y="20" width="30" height="22" fill="#feca57"></rect>
+  <rect x="335" y="20" width="30" height="22" fill="#48dbfb"></rect>
+
+  <!-- Row 2 -->
+  <rect x="30" y="48" width="30" height="22" fill="#1dd1a1"></rect>
+  <rect x="65" y="48" width="30" height="22" fill="#ff9ff3"></rect>
+  <rect x="100" y="48" width="30" height="22" fill="#54a0ff"></rect>
+  <rect x="135" y="48" width="30" height="22" fill="#5f27cd"></rect>
+  <rect x="170" y="48" width="30" height="22" fill="#ff6b6b"></rect>
+  <rect x="205" y="48" width="30" height="22" fill="#feca57"></rect>
+  <rect x="240" y="48" width="30" height="22" fill="#48dbfb"></rect>
+  <rect x="275" y="48" width="30" height="22" fill="#1dd1a1"></rect>
+  <rect x="310" y="48" width="30" height="22" fill="#ff9ff3"></rect>
+
+  <!-- Row 3 -->
+  <rect x="40" y="76" width="30" height="22" fill="#54a0ff"></rect>
+  <rect x="75" y="76" width="30" height="22" fill="#5f27cd"></rect>
+  <rect x="110" y="76" width="30" height="22" fill="#ff6b6b"></rect>
+  <rect x="145" y="76" width="30" height="22" fill="#feca57"></rect>
+  <rect x="180" y="76" width="30" height="22" fill="#48dbfb"></rect>
+  <rect x="215" y="76" width="30" height="22" fill="#1dd1a1"></rect>
+  <rect x="250" y="76" width="30" height="22" fill="#ff9ff3"></rect>
+  <rect x="285" y="76" width="30" height="22" fill="#54a0ff"></rect>
+
+  <!-- Row 4 -->
+  <rect x="60" y="104" width="40" height="22" fill="#5f27cd"></rect>
+  <rect x="105" y="104" width="40" height="22" fill="#ff6b6b"></rect>
+  <rect x="150" y="104" width="40" height="22" fill="#feca57"></rect>
+  <rect x="195" y="104" width="40" height="22" fill="#48dbfb"></rect>
+  <rect x="240" y="104" width="40" height="22" fill="#1dd1a1"></rect>
+
+  <!-- Spacebar -->
+  <rect x="120" y="132" width="180" height="22" fill="#ff9ff3"></rect>
+
+</svg>
