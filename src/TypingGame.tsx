@@ -23,9 +23,8 @@ const SpeedTypingGame: React.FC = () => {
         setRoomId,
         roomParagraph,
         roomStatus,
-        characterNumber
     } = useSharedSpace();
-    console.log("characterNumbercharacterNumbercharacterNumber:",characterNumber)
+    // console.log("characterNumbercharacterNumbercharacterNumber:",characterNumber)
     const imgArrWalk = ["/walk_0.png", "/walk_1.png", "/walk_2.png", "/walk_3.png", "/walk_4.png", "/walk_5.png", "/walk_6.png", "/walk_7.png", "/walk_8.png", "/walk_9.png"];
     const imgArrRun = ["/run_0.png", "/run_1.png", "/run_2.png", "/run_3.png", "/run_4.png", "/run_5.png", "/run_6.png", "/run_7.png", "/run_8.png", "/run_9.png"];
     const idleImg = "/Idle_0.png";
@@ -42,11 +41,26 @@ const SpeedTypingGame: React.FC = () => {
     const [WPM, setWPM] = useState<number>(0);
     const [isDisabled, setIsDisabled] = useState(true);
     const trackRefs = useRef<Record<string, HTMLDivElement | null>>({});
+    const preloadedImgs = useRef<HTMLImageElement[]>([]);
     const [charIndexBeforeMistake, setCharIndexBeforeMistake] = useState<number>(0);
     const [isActivelyTyping, setIsActivelyTyping] = useState(false);
     const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+    useEffect(() => {
+        if (roomParagraph) {
+            sendSharedData({ totalMistakes, WPM, charIndex, charIndexBeforeMistake, mistakes, isActivelyTyping });
+        }
+    }, [roomParagraph]);
 
-    sendSharedData({ totalMistakes, WPM, charIndex, charIndexBeforeMistake, mistakes,isActivelyTyping });
+    useEffect(() => {
+        const allImgs = [...imgArrWalk, ...imgArrRun, idleImg];
+        preloadedImgs.current = [0, 1, 2, 3, 4].flatMap(charNum =>
+            allImgs.map(src => {
+                const img = new Image();
+                img.src = `/Character${charNum}${src}`;
+                return img;
+            })
+        );
+    }, []);
 
 
     const [step, setStep] = useState(0);
@@ -55,7 +69,7 @@ const SpeedTypingGame: React.FC = () => {
     useEffect(() => {
 
         if (step == words.length) {
-             setIsDisabled(false);
+            setIsDisabled(false);
         }
         else if (roomStatus === "filled" && step < words.length) {
             const timer = setTimeout(() => {
@@ -143,7 +157,7 @@ const SpeedTypingGame: React.FC = () => {
             if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
             typingTimeoutRef.current = setTimeout(() => {
                 setIsActivelyTyping(false);
-            }, 1000);
+            }, 500);
         } else {
             setIsTyping(false);
         }
@@ -176,20 +190,22 @@ const SpeedTypingGame: React.FC = () => {
         loadParagraph(roomParagraph);
     }, [roomParagraph]);
 
+
     useEffect(() => {
         let wpm = Math.round(((charIndex - mistakes) / paragraphMean) / (maxTime - timeLeft) * 60);
         setWPM(wpm < 0 || !wpm || wpm === Infinity ? 0 : wpm);
-        let interval: ReturnType<typeof setInterval>;
-        if ( charIndex < roomParagraph.length &&(isDisabled == false && timeLeft||isTyping && timeLeft > 0)) {
-            interval = setInterval(() => {
-                sendSharedData({ totalMistakes, WPM, charIndex, charIndexBeforeMistake, mistakes,isActivelyTyping });
+        if (charIndex < roomParagraph.length && (isDisabled == false && timeLeft || isTyping && timeLeft > 0)) {
+            const dataInterval = setInterval(() => {
+                sendSharedData({ totalMistakes, WPM, charIndex, charIndexBeforeMistake, mistakes, isActivelyTyping });
+            }, 100);
+            const timerInterval = setInterval(() => {
                 setTimeLeft(prev => prev - 1);
             }, 1000);
+            return () => { clearInterval(dataInterval); clearInterval(timerInterval); };
         } else if (timeLeft === 0) {
             setIsTyping(false);
         }
-        return () => clearInterval(interval);
-    }, [isTyping, timeLeft,isDisabled]);
+    }, [isTyping, timeLeft, isDisabled]);
 
 
     const latestBySender = sharedData.reduce<Record<string, (typeof sharedData)[number]>>(
@@ -211,7 +227,7 @@ const SpeedTypingGame: React.FC = () => {
                 senderIds.forEach(id => { next[id] = ((next[id] ?? 0) + 1) % 10; });
                 return next;
             });
-        }, 200);
+        }, 500);
         return () => clearInterval(interval);
     }, [Object.keys(latestBySender).sort().join(',')]);
     return (
@@ -223,7 +239,7 @@ const SpeedTypingGame: React.FC = () => {
                     <h2 key={step} className="animate">
                         {words[step]}
                     </h2>
-                    
+
                 )}</div>
 
 
@@ -243,7 +259,7 @@ const SpeedTypingGame: React.FC = () => {
                                 trackRefs.current[senderId] = el;
                             }} className="race-track">
                                 <img
-                                    src={(item.typeObject.isActivelyTyping && !(item.typeObject.mistakes>0))?((item.typeObject.WPM > 45) ? `/Character${item.characterNumber}`+imgArrRun[localImgCounts[senderId] ?? 0] : `/Character${item.characterNumber}`+imgArrWalk[localImgCounts[senderId] ?? 0]):`/Character${item.characterNumber}`+idleImg}
+                                    src={(item.typeObject.isActivelyTyping && !(item.typeObject.mistakes > 0)) ? ((item.typeObject.WPM > 45) ? `/Character${item.characterNumber}` + imgArrRun[localImgCounts[senderId] ?? 0] : `/Character${item.characterNumber}` + imgArrWalk[localImgCounts[senderId] ?? 0]) : `/Character${item.characterNumber}` + idleImg}
                                     alt="moving"
                                     style={{
                                         left: `${(
