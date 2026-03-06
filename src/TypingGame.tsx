@@ -44,12 +44,18 @@ const SpeedTypingGame: React.FC = () => {
     const preloadedImgs = useRef<HTMLImageElement[]>([]);
     const [charIndexBeforeMistake, setCharIndexBeforeMistake] = useState<number>(0);
     const [isActivelyTyping, setIsActivelyTyping] = useState(false);
+    const [isCompleted, setIsCompleted] = useState(false);
     const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     useEffect(() => {
         if (roomParagraph) {
             sendSharedData({ totalMistakes, WPM, charIndex, charIndexBeforeMistake, mistakes, isActivelyTyping });
         }
     }, [roomParagraph]);
+
+    useEffect(() => {
+        if (!isCompleted) return;
+        sendSharedData({ totalMistakes, WPM, charIndex, charIndexBeforeMistake, mistakes: 0, isActivelyTyping: false });
+    }, [isCompleted]);
 
     useEffect(() => {
         const allImgs = [...imgArrWalk, ...imgArrRun, idleImg];
@@ -152,6 +158,9 @@ const SpeedTypingGame: React.FC = () => {
                 characters[charIndex + 1].classList.add('active');
             } else {
                 setIsTyping(false);
+                if(mistakes == 0 && charIndex == roomParagraph.length){
+                    setIsCompleted(true);
+                }
             }
             setIsActivelyTyping(true);
             if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
@@ -170,6 +179,7 @@ const SpeedTypingGame: React.FC = () => {
             char.classList.remove('wrong', 'correct', 'active');
         });
         setIsTyping(false);
+        setIsCompleted(false);
         setTimeLeft(maxTime);
         setCharIndex(0);
         setMistakes(0);
@@ -192,6 +202,7 @@ const SpeedTypingGame: React.FC = () => {
 
 
     useEffect(() => {
+        if (isCompleted) return;
         let wpm = Math.round(((charIndex - mistakes) / paragraphMean) / (maxTime - timeLeft) * 60);
         setWPM(wpm < 0 || !wpm || wpm === Infinity ? 0 : wpm);
         if (charIndex <= roomParagraph.length && (isDisabled == false && timeLeft || isTyping && timeLeft > 0)) {
@@ -205,10 +216,9 @@ const SpeedTypingGame: React.FC = () => {
         } else if (timeLeft === 0 &&charIndex == roomParagraph.length) {
                 setIsTyping(false);
                 setIsActivelyTyping(false);
-            
 
         }
-    }, [isTyping, timeLeft, isDisabled]);
+    }, [isTyping, timeLeft, isDisabled, isCompleted]);
 
 
     const latestBySender = sharedData.reduce<Record<string, (typeof sharedData)[number]>>(
