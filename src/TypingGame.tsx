@@ -32,7 +32,7 @@ const SpeedTypingGame: React.FC = () => {
     const [paragraphMean, setParagraphMean] = useState<number>(0);
     const [typingText, setTypingText] = useState<React.JSX.Element[] | string>([]);
     const [inpFieldValue, setInpFieldValue] = useState<string>('');
-    const maxTime: number = 90;
+    const maxTime: number = 900;
     const [timeLeft, setTimeLeft] = useState<number>(maxTime);
     const [charIndex, setCharIndex] = useState<number>(0);
     const [mistakes, setMistakes] = useState<number>(0);
@@ -64,14 +64,14 @@ const SpeedTypingGame: React.FC = () => {
 
 
     const [step, setStep] = useState(0);
-    const words = ["Waiting for Players to join...", "The Race begins in", "🔴🔴5🔴🔴", "🔴🔴4🔴🔴", "🔴🔴3🔴🔴", "🟡🟡2🟡🟡", "🟡🟡1🟡🟡", "🟢🟢Go!🟢🟢"];
-
+    const IntroCountDown = ["Waiting for Players to join...", "The Race begins in", "🔴🔴5🔴🔴", "🔴🔴4🔴🔴", "🔴🔴3🔴🔴", "🟡🟡2🟡🟡", "🟡🟡1🟡🟡", "🟢🟢Go!🟢🟢"];
+    const rank = ["/6th.png", "/5th.png", "/4th.png", "/3rd.png", "/2nd.png", "/1st.png"];
     useEffect(() => {
 
-        if (step == words.length) {
+        if (step == IntroCountDown.length) {
             setIsDisabled(false);
         }
-        else if (roomStatus === "filled" && step < words.length) {
+        else if (roomStatus === "filled" && step < IntroCountDown.length) {
             const timer = setTimeout(() => {
                 setStep(step + 1);
             }, (step === 1) ? 2000 : 1000);
@@ -108,7 +108,7 @@ const SpeedTypingGame: React.FC = () => {
 
     const handleKeyDown = (event: KeyboardEvent<HTMLInputElement>): void => {
         const characters = document.querySelectorAll<HTMLSpanElement>('.char');
-        if (event.key === 'Backspace' && charIndex > 0 && charIndex < characters.length && timeLeft > 0 && (characters[charIndex - 1].textContent != " " || mistakes > 0)) {
+        if (event.key === 'Backspace' && charIndex > 0 && charIndex <= characters.length && timeLeft > 0 && (characters[charIndex - 1].textContent != " " || mistakes > 0) && (charIndex <= roomParagraph.length && mistakes >0)) {
 
             if (characters[charIndex - 1].classList.contains('correct')) {
                 characters[charIndex - 1].classList.remove('correct');
@@ -118,7 +118,7 @@ const SpeedTypingGame: React.FC = () => {
                 setMistakes(prev => prev - 1);
             }
 
-            characters[charIndex].classList.remove('active');
+            characters[charIndex]?.classList.remove('active');
             characters[charIndex - 1].classList.add('active');
             setCharIndex(prev => prev - 1);
 
@@ -194,7 +194,7 @@ const SpeedTypingGame: React.FC = () => {
     useEffect(() => {
         let wpm = Math.round(((charIndex - mistakes) / paragraphMean) / (maxTime - timeLeft) * 60);
         setWPM(wpm < 0 || !wpm || wpm === Infinity ? 0 : wpm);
-        if (charIndex < roomParagraph.length && (isDisabled == false && timeLeft || isTyping && timeLeft > 0)) {
+        if (charIndex <= roomParagraph.length && (isDisabled == false && timeLeft || isTyping && timeLeft > 0)) {
             const dataInterval = setInterval(() => {
                 sendSharedData({ totalMistakes, WPM, charIndex, charIndexBeforeMistake, mistakes, isActivelyTyping });
             }, 100);
@@ -202,8 +202,11 @@ const SpeedTypingGame: React.FC = () => {
                 setTimeLeft(prev => prev - 1);
             }, 1000);
             return () => { clearInterval(dataInterval); clearInterval(timerInterval); };
-        } else if (timeLeft === 0) {
-            setIsTyping(false);
+        } else if (timeLeft === 0 &&charIndex == roomParagraph.length) {
+                setIsTyping(false);
+                setIsActivelyTyping(false);
+            
+
         }
     }, [isTyping, timeLeft, isDisabled]);
 
@@ -235,9 +238,9 @@ const SpeedTypingGame: React.FC = () => {
         <div className="container">
 
             <div className='lobby-form'>
-                <div >{step <= words.length && (
+                <div >{step <= IntroCountDown.length && (
                     <h2 key={step} className="animate">
-                        {words[step]}
+                        {IntroCountDown[step]}
                     </h2>
 
                 )}</div>
@@ -259,14 +262,16 @@ const SpeedTypingGame: React.FC = () => {
                                 trackRefs.current[senderId] = el;
                             }} className="race-track">
                                 <img
-                                    src={(item.typeObject.isActivelyTyping && !(item.typeObject.mistakes > 0)) ? ((item.typeObject.WPM > 45) ? `/Character${item.characterNumber}` + imgArrRun[localImgCounts[senderId] ?? 0] : `/Character${item.characterNumber}` + imgArrWalk[localImgCounts[senderId] ?? 0]) : `/Character${item.characterNumber}` + idleImg}
+                                    src={(item.typeObject.charIndex < roomParagraph.length ) ? (item.typeObject.isActivelyTyping && !(item.typeObject.mistakes > 0)) ? ((item.typeObject.WPM > 45) ? `/Character${item.characterNumber}` + imgArrRun[localImgCounts[senderId] ?? 0] : `/Character${item.characterNumber}` + imgArrWalk[localImgCounts[senderId] ?? 0]) : `/Character${item.characterNumber}` + idleImg : (item.typeObject.mistakes == 0)?rank.pop():`/Character${item.characterNumber}` + idleImg}
+                                    className={(item.typeObject.charIndex >= roomParagraph.length && item.typeObject.mistakes == 0) ? "rank-img" : "character-img"}
                                     alt="moving"
                                     style={{
                                         left: `${(
+                                            (item.typeObject.charIndex == roomParagraph.length  && item.typeObject.mistakes == 0)? 5:
                                             item.typeObject.mistakes > 0
                                                 ? (item.typeObject.charIndexBeforeMistake)
                                                 : (item.typeObject.charIndex)
-                                        ) / (roomParagraph?.length ?? 1) * 100}%`,
+                                        ) / (roomParagraph?.length ?? 1) * 100+1}%`,
                                         transition: "left 0.2s ease-out"
                                     }}
                                 />

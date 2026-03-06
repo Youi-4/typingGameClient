@@ -170,10 +170,14 @@ body {
   overflow: hidden;
 }
 
-.race-track img {
+.race-track .character-img {
   position: absolute;
-  transform: translateY(-40%) translateX(-29%);
-  
+  transform: translateY(-40%) translateX(-30%);
+}
+
+.race-track .rank-img {
+  position: absolute;
+  transform:  translateX(-30%);
 }
 @keyframes pop {
   0% {
