@@ -32,7 +32,7 @@ const SpeedTypingGame: React.FC = () => {
     const [paragraphMean, setParagraphMean] = useState<number>(0);
     const [typingText, setTypingText] = useState<React.JSX.Element[] | string>([]);
     const [inpFieldValue, setInpFieldValue] = useState<string>('');
-    const maxTime: number = 900;
+    const maxTime: number = 90;
     const [timeLeft, setTimeLeft] = useState<number>(maxTime);
     const [charIndex, setCharIndex] = useState<number>(0);
     const [mistakes, setMistakes] = useState<number>(0);
