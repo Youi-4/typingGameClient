@@ -139,6 +139,16 @@ body {
   background-color: #084b9c;
 }
 
+.lobby-button:disabled {
+  cursor: not-allowed;
+  animation: pulse 1s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
 .lobby-hint {
   margin-top: 12px;
   font-size: 12px;
