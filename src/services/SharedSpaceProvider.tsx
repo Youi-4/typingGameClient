@@ -17,6 +17,7 @@ export interface TypeObject {
   charIndexBeforeMistake: number;
   mistakes: number;
   isActivelyTyping:boolean;
+  isCompleted:boolean;
 }
 export interface SharedMessage {
   senderId: string;

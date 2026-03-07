@@ -48,13 +48,13 @@ const SpeedTypingGame: React.FC = () => {
     const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     useEffect(() => {
         if (roomParagraph) {
-            sendSharedData({ totalMistakes, WPM, charIndex, charIndexBeforeMistake, mistakes, isActivelyTyping });
+            sendSharedData({ totalMistakes, WPM, charIndex, charIndexBeforeMistake, mistakes, isActivelyTyping,isCompleted });
         }
     }, [roomParagraph]);
 
     useEffect(() => {
         if (!isCompleted) return;
-        sendSharedData({ totalMistakes, WPM, charIndex, charIndexBeforeMistake, mistakes: 0, isActivelyTyping: false });
+        sendSharedData({ totalMistakes, WPM, charIndex, charIndexBeforeMistake, mistakes: 0, isActivelyTyping: false,isCompleted });
     }, [isCompleted]);
 
     useEffect(() => {
@@ -158,7 +158,8 @@ const SpeedTypingGame: React.FC = () => {
                 characters[charIndex + 1].classList.add('active');
             } else {
                 setIsTyping(false);
-                if(mistakes == 0 && charIndex == roomParagraph.length){
+                if(mistakes == 0 && charIndex + 1 >= roomParagraph.length){
+                    console.log("COMPLEEEEETEEEED")
                     setIsCompleted(true);
                 }
             }
@@ -202,12 +203,14 @@ const SpeedTypingGame: React.FC = () => {
 
 
     useEffect(() => {
+        
         if (isCompleted) return;
+        // console.log("heyyyyy")
         let wpm = Math.round(((charIndex - mistakes) / paragraphMean) / (maxTime - timeLeft) * 60);
         setWPM(wpm < 0 || !wpm || wpm === Infinity ? 0 : wpm);
         if (charIndex <= roomParagraph.length && (isDisabled == false && timeLeft || isTyping && timeLeft > 0)) {
             const dataInterval = setInterval(() => {
-                sendSharedData({ totalMistakes, WPM, charIndex, charIndexBeforeMistake, mistakes, isActivelyTyping });
+                sendSharedData({ totalMistakes, WPM, charIndex, charIndexBeforeMistake, mistakes, isActivelyTyping,isCompleted });
             }, 100);
             const timerInterval = setInterval(() => {
                 setTimeLeft(prev => prev - 1);
@@ -268,16 +271,16 @@ const SpeedTypingGame: React.FC = () => {
                                 <div > <b>WPM:{item.typeObject?.WPM ?? 0}</b></div>
 
                             </div>
-                            <div ref={(el: HTMLDivElement | null) => {
+                            <div ref={(el: HTMLDivElement | null) => {console.log(item.typeObject.isCompleted),
                                 trackRefs.current[senderId] = el;
                             }} className="race-track">
                                 <img
-                                    src={(item.typeObject.charIndex < roomParagraph.length ) ? (item.typeObject.isActivelyTyping && !(item.typeObject.mistakes > 0)) ? ((item.typeObject.WPM > 45) ? `/Character${item.characterNumber}` + imgArrRun[localImgCounts[senderId] ?? 0] : `/Character${item.characterNumber}` + imgArrWalk[localImgCounts[senderId] ?? 0]) : `/Character${item.characterNumber}` + idleImg : (item.typeObject.mistakes == 0)?rank.pop():`/Character${item.characterNumber}` + idleImg}
-                                    className={(item.typeObject.charIndex >= roomParagraph.length && item.typeObject.mistakes == 0) ? "rank-img" : "character-img"}
+                                    src={(!item.typeObject.isCompleted ) ? (item.typeObject.isActivelyTyping && !(item.typeObject.mistakes > 0)) ? ((item.typeObject.WPM > 45) ? `/Character${item.characterNumber}` + imgArrRun[localImgCounts[senderId] ?? 0] : `/Character${item.characterNumber}` + imgArrWalk[localImgCounts[senderId] ?? 0]) : `/Character${item.characterNumber}` + idleImg : (item.typeObject.mistakes == 0)?rank.pop():`/Character${item.characterNumber}` + idleImg}
+                                    className={(item.typeObject.isCompleted) ? "rank-img" : "character-img"}
                                     alt="moving"
                                     style={{
                                         left: `${(
-                                            (item.typeObject.charIndex == roomParagraph.length  && item.typeObject.mistakes == 0)? 5:
+                                            (item.typeObject.isCompleted)? 5:
                                             item.typeObject.mistakes > 0
                                                 ? (item.typeObject.charIndexBeforeMistake)
                                                 : (item.typeObject.charIndex)
