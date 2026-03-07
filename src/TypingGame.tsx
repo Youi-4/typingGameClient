@@ -159,7 +159,6 @@ const SpeedTypingGame: React.FC = () => {
             } else {
                 setIsTyping(false);
                 if(mistakes == 0 && charIndex + 1 >= roomParagraph.length){
-                    console.log("COMPLEEEEETEEEED")
                     setIsCompleted(true);
                 }
             }
@@ -271,7 +270,7 @@ const SpeedTypingGame: React.FC = () => {
                                 <div > <b>WPM:{item.typeObject?.WPM ?? 0}</b></div>
 
                             </div>
-                            <div ref={(el: HTMLDivElement | null) => {console.log(item.typeObject.isCompleted),
+                            <div ref={(el: HTMLDivElement | null) => {
                                 trackRefs.current[senderId] = el;
                             }} className="race-track">
                                 <img
