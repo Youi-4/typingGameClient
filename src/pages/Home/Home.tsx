@@ -8,7 +8,7 @@ function Home() {
   const { setNamespace,setRoomId } = useSharedSpace();
   const navigate = useNavigate();
   const [roomInput, setRoomInput] = useState<string>("");
-  const [joiningOnline, setJoiningOnline] = useState(false);
+  const [joiningGame, setJoiningGame] = useState(false);
 
 const [generatedRoom, setGeneratedRoom] = useState<string>("");
 const hasCreated = useRef(false);
@@ -28,9 +28,9 @@ useEffect(() => {
 }, []);
 
   const createLobby = async() => {
-    // console.log(generatedRoom,"IODJOISJF");
     setNamespace("/private_game");
     setRoomId(generatedRoom);
+    setJoiningGame(true);
     navigate(`/Play/${generatedRoom}`);
   };
 
@@ -39,13 +39,14 @@ useEffect(() => {
     
     const trimmed = roomInput.trim();
     if (!trimmed) return;
+    setJoiningGame(true);
     await createRoom(trimmed);
     setRoomId(trimmed);
     setNamespace("/private_game");
     navigate(`/Play/${trimmed}`);
   };
    const onlineLobby = async () =>{
-    setJoiningOnline(true);
+    setJoiningGame(true);
     const roomId = await createRoom("public");
     setNamespace("/public_game");
     setRoomId(roomId)
@@ -56,8 +57,8 @@ useEffect(() => {
       <div className="lobby-header">
         <h1 className="lobby-title">Create a room or join one to play together.</h1>
       </div>
-          <button className="lobby-button" id="online-game-button" onClick={onlineLobby} disabled={joiningOnline}>
-            {joiningOnline ? "Finding a game..." : "Join online game"}
+          <button className="lobby-button" id="online-game-button" onClick={onlineLobby} disabled={joiningGame}>
+            Join online game
           </button>
       <div className="lobby-grid">
         <div className="lobby-panel">
@@ -85,6 +86,7 @@ useEffect(() => {
           </form>
         </div>
       </div>
+      <h1 className="lobby-title" id="waiting" hidden ={!joiningGame}>Please wait to join your game</h1>
     </div>
     
   );

@@ -138,15 +138,18 @@ body {
 .lobby-button:hover {
   background-color: #084b9c;
 }
-
-.lobby-button:disabled {
-  cursor: not-allowed;
+#waiting{
+    cursor: not-allowed;
   animation: pulse 1s ease-in-out infinite;
 }
+/* .lobby-button:disabled {
+  cursor: not-allowed;
+  animation: pulse 1s ease-in-out infinite;
+} */
 
 @keyframes pulse {
   0%, 100% { opacity: 1; }
-  50% { opacity: 0.4; }
+  50% { opacity: 0.1; }
 }
 
 .lobby-hint {
@@ -370,7 +373,7 @@ ul li a {
 }
 
 ul li a:hover, .dropdown:hover, .dropbtn:hover {
-  background-color: #01097a;
+  background-color: #084b9c;
   color: white;
    z-index: 1000;
 }
