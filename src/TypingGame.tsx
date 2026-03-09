@@ -3,6 +3,7 @@ import React, {
     useState,
     useEffect,
     useRef,
+    useMemo,
     type ChangeEvent,
     type KeyboardEvent
 } from 'react';
@@ -10,6 +11,10 @@ import './styles.css';
 import TypingArea from './TypingArea';
 // import { useParams } from "react-router-dom";
 import { useSharedSpace } from './services/SharedSpaceProvider';
+
+    const imgArrWalk = ["/walk_0.png", "/walk_1.png", "/walk_2.png", "/walk_3.png", "/walk_4.png", "/walk_5.png", "/walk_6.png", "/walk_7.png", "/walk_8.png", "/walk_9.png"];
+    const imgArrRun = ["/run_0.png", "/run_1.png", "/run_2.png", "/run_3.png", "/run_4.png", "/run_5.png", "/run_6.png", "/run_7.png", "/run_8.png", "/run_9.png"];
+    const idleImg = "/Idle_0.png";
 const SpeedTypingGame: React.FC = () => {
     // const { roomId: roomIdParam } = useParams();
     // console.log(roomIdParam,"$$$$$$$$");
@@ -26,9 +31,7 @@ const SpeedTypingGame: React.FC = () => {
         roomSize
     } = useSharedSpace();
     // console.log("characterNumbercharacterNumbercharacterNumber:",characterNumber)
-    const imgArrWalk = ["/walk_0.png", "/walk_1.png", "/walk_2.png", "/walk_3.png", "/walk_4.png", "/walk_5.png", "/walk_6.png", "/walk_7.png", "/walk_8.png", "/walk_9.png"];
-    const imgArrRun = ["/run_0.png", "/run_1.png", "/run_2.png", "/run_3.png", "/run_4.png", "/run_5.png", "/run_6.png", "/run_7.png", "/run_8.png", "/run_9.png"];
-    const idleImg = "/Idle_0.png";
+
     const [localImgCounts, setLocalImgCounts] = useState<Record<string, number>>({});
     const [paragraphMean, setParagraphMean] = useState<number>(0);
     const [typingText, setTypingText] = useState<React.JSX.Element[] | string>([]);
@@ -50,6 +53,16 @@ const SpeedTypingGame: React.FC = () => {
     const [isActivelyTyping, setIsActivelyTyping] = useState(false);
     const [isCompleted, setIsCompleted] = useState(false);
     const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+    const gameStartTimeRef = useRef<number | null>(null);
+    const typeDataRef = useRef({ totalMistakes: 0, WPM: 0, charIndex: 0, charIndexBeforeMistake: 0, mistakes: 0, isActivelyTyping: false, isCompleted: false });
+    const charactersRef = useRef<HTMLCollectionOf<HTMLElement>>(document.getElementsByClassName('char') as HTMLCollectionOf<HTMLElement>);
+    useEffect(() => {
+        const inputField = document.getElementById('game-input-field') as HTMLInputElement;
+        const focusInput = () => inputField?.focus();
+        document.addEventListener("keydown", focusInput);
+        return () => document.removeEventListener("keydown", focusInput);
+    }, []);
+
     useEffect(() => {
         if (roomParagraph) {
             sendSharedData({ totalMistakes, WPM, charIndex, charIndexBeforeMistake, mistakes, isActivelyTyping,isCompleted });
@@ -91,10 +104,6 @@ const SpeedTypingGame: React.FC = () => {
 
     }, [step, roomStatus]);
     const loadParagraph = (senten: string): void => {
-        const inputField = document.getElementsByClassName('input-field')[0] as HTMLInputElement;
-
-        const focusInput = () => inputField?.focus();
-        document.addEventListener("keydown", focusInput);
         const num: number = senten.split(' ').length + 1;
         setParagraphMean((senten.length - num) / num)
 
@@ -117,7 +126,7 @@ const SpeedTypingGame: React.FC = () => {
     };
 
     const handleKeyDown = (event: KeyboardEvent<HTMLInputElement>): void => {
-        const characters = document.querySelectorAll<HTMLSpanElement>('.char');
+        const characters = charactersRef.current;
         if (event.key === 'Backspace' && charIndex > 0 && charIndex <= characters.length && timeLeft > 0 && (characters[charIndex - 1].textContent != " " || mistakes > 0) && (charIndex <= roomParagraph.length && mistakes >0)) {
 
             if (characters[charIndex - 1].classList.contains('correct')) {
@@ -136,7 +145,7 @@ const SpeedTypingGame: React.FC = () => {
     }
 
     const initTyping = (event: ChangeEvent<HTMLInputElement>): void => {
-        const characters = document.querySelectorAll<HTMLSpanElement>('.char');
+        const characters = charactersRef.current;
         // Get only the last character typed
         let typedChar = event.target.value.slice(-1);
         // console.log(typedChar)
@@ -205,14 +214,10 @@ const SpeedTypingGame: React.FC = () => {
     }, [roomParagraph]);
 
 
-    // Isolated timer — only starts/stops based on game state, not timeLeft
+    // Keep ref in sync every render so the data interval always sends fresh values
     useEffect(() => {
-        if (isCompleted || isDisabled) return;
-        const timerInterval = setInterval(() => {
-            setTimeLeft(prev => Math.max(0, prev - 1));
-        }, 1000);
-        return () => clearInterval(timerInterval);
-    }, [isDisabled, isCompleted]);
+        typeDataRef.current = { totalMistakes, WPM, charIndex, charIndexBeforeMistake, mistakes, isActivelyTyping, isCompleted };
+    });
 
     useEffect(() => {
         if (isCompleted) return;
@@ -220,24 +225,37 @@ const SpeedTypingGame: React.FC = () => {
         setWPM(wpm < 0 || !wpm || wpm === Infinity ? 0 : wpm);
         if (charIndex <= roomParagraph.length && (isDisabled == false && timeLeft || isTyping && timeLeft > 0)) {
             const dataInterval = setInterval(() => {
-                sendSharedData({ totalMistakes, WPM, charIndex, charIndexBeforeMistake, mistakes, isActivelyTyping, isCompleted });
+                sendSharedData(typeDataRef.current);
             }, 100);
             return () => clearInterval(dataInterval);
         } else if (timeLeft === 0 && charIndex == roomParagraph.length) {
             setIsTyping(false);
             setIsActivelyTyping(false);
         }
-    }, [isTyping, timeLeft, isDisabled, isCompleted]);
+    }, [timeLeft, isDisabled, isCompleted]);
+
+    // Timer uses wall-clock so event loop pressure from typing can't cause drift
+    useEffect(() => {
+        if (isDisabled || isCompleted) return;
+        gameStartTimeRef.current = Date.now();
+        const timerInterval = setInterval(() => {
+            const elapsed = Math.floor((Date.now() - gameStartTimeRef.current!) / 1000);
+            const remaining = Math.max(0, maxTime - elapsed);
+            setTimeLeft(remaining);
+            if (remaining <= 0) clearInterval(timerInterval);
+        }, 1000);
+        return () => clearInterval(timerInterval);
+    }, [isDisabled, isCompleted]);
 
 
-    const latestBySender = sharedData.reduce<Record<string, (typeof sharedData)[number]>>(
+    const latestBySender = useMemo(() => sharedData.reduce<Record<string, (typeof sharedData)[number]>>(
         (acc, item) => {
             const key = item.senderId || "unknown";
             acc[key] = item;
             return acc;
         },
         {}
-    );
+    ), [sharedData]);
 
     useEffect(() => {
         const senderIds = Object.keys(latestBySender);

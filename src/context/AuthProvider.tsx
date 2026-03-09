@@ -176,12 +176,12 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   ===================== */
 
 
-  console.log("AuthProvider state:", {
-    isAuthenticated,
-    user,
-    isAuthPending,
-    isAuthError,
-  });
+  // console.log("AuthProvider state:", {
+  //   isAuthenticated,
+  //   user,
+  //   isAuthPending,
+  //   isAuthError,
+  // });
 
   return (
     <AuthContext.Provider

@@ -109,7 +109,13 @@ export function SharedSpaceProvider({
         });
 
         socket.on("receive-message", (data: SharedMessage) => {
-          setSharedData((prev) => [...prev, data]);
+          setSharedData((prev) => {
+            const idx = prev.findIndex(m => m.senderId === data.senderId);
+            if (idx === -1) return [...prev, data];
+            const next = [...prev];
+            next[idx] = data;
+            return next;
+          });
         });
 
         socket.on("user-left", ({ senderId }: { senderId: string }) => {
