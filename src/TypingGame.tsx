@@ -42,6 +42,7 @@ const SpeedTypingGame: React.FC = () => {
     const [isDisabled, setIsDisabled] = useState(true);
     const trackRefs = useRef<Record<string, HTMLDivElement | null>>({});
     const preloadedImgs = useRef<HTMLImageElement[]>([]);
+    const assignedRanks = useRef<Record<string, string>>({});
     const [charIndexBeforeMistake, setCharIndexBeforeMistake] = useState<number>(0);
     const [isActivelyTyping, setIsActivelyTyping] = useState(false);
     const [isCompleted, setIsCompleted] = useState(false);
@@ -71,7 +72,7 @@ const SpeedTypingGame: React.FC = () => {
 
     const [step, setStep] = useState(0);
     const IntroCountDown = ["Waiting for Players to join...", "The Race begins in", "🔴🔴5🔴🔴", "🔴🔴4🔴🔴", "🔴🔴3🔴🔴", "🟡🟡2🟡🟡", "🟡🟡1🟡🟡", "🟢🟢Go!🟢🟢"];
-    const rank = ["/6th.png", "/5th.png", "/4th.png", "/3rd.png", "/2nd.png", "/1st.png"];
+    const rankRef = useRef(["/6th.png", "/5th.png", "/4th.png", "/3rd.png", "/2nd.png", "/1st.png"]);
     useEffect(() => {
 
         if (step == IntroCountDown.length) {
@@ -274,7 +275,7 @@ const SpeedTypingGame: React.FC = () => {
                                 trackRefs.current[senderId] = el;
                             }} className="race-track">
                                 <img
-                                    src={(!item.typeObject.isCompleted ) ? (item.typeObject.isActivelyTyping && !(item.typeObject.mistakes > 0)) ? ((item.typeObject.WPM > 45) ? `/Character${item.characterNumber}` + imgArrRun[localImgCounts[senderId] ?? 0] : `/Character${item.characterNumber}` + imgArrWalk[localImgCounts[senderId] ?? 0]) : `/Character${item.characterNumber}` + idleImg : (item.typeObject.mistakes == 0)?rank.pop():`/Character${item.characterNumber}` + idleImg}
+                                    src={(!item.typeObject.isCompleted ) ? (item.typeObject.isActivelyTyping && !(item.typeObject.mistakes > 0)) ? ((item.typeObject.WPM > 45) ? `/Character${item.characterNumber}` + imgArrRun[localImgCounts[senderId] ?? 0] : `/Character${item.characterNumber}` + imgArrWalk[localImgCounts[senderId] ?? 0]) : `/Character${item.characterNumber}` + idleImg : (item.typeObject.mistakes == 0)?(assignedRanks.current[senderId] ?? (assignedRanks.current[senderId] = rankRef.current.pop() ?? "/1st.png")):`/Character${item.characterNumber}` + idleImg}
                                     className={(item.typeObject.isCompleted) ? "rank-img" : "character-img"}
                                     alt="moving"
                                     style={{
