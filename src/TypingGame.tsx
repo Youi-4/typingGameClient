@@ -205,24 +205,27 @@ const SpeedTypingGame: React.FC = () => {
     }, [roomParagraph]);
 
 
+    // Isolated timer — only starts/stops based on game state, not timeLeft
     useEffect(() => {
-        
+        if (isCompleted || isDisabled) return;
+        const timerInterval = setInterval(() => {
+            setTimeLeft(prev => Math.max(0, prev - 1));
+        }, 1000);
+        return () => clearInterval(timerInterval);
+    }, [isDisabled, isCompleted]);
+
+    useEffect(() => {
         if (isCompleted) return;
-        // console.log("heyyyyy")
         let wpm = Math.round(((charIndex - mistakes) / paragraphMean) / (maxTime - timeLeft) * 60);
         setWPM(wpm < 0 || !wpm || wpm === Infinity ? 0 : wpm);
         if (charIndex <= roomParagraph.length && (isDisabled == false && timeLeft || isTyping && timeLeft > 0)) {
             const dataInterval = setInterval(() => {
-                sendSharedData({ totalMistakes, WPM, charIndex, charIndexBeforeMistake, mistakes, isActivelyTyping,isCompleted });
+                sendSharedData({ totalMistakes, WPM, charIndex, charIndexBeforeMistake, mistakes, isActivelyTyping, isCompleted });
             }, 100);
-            const timerInterval = setInterval(() => {
-                setTimeLeft(prev => prev - 1);
-            }, 1000);
-            return () => { clearInterval(dataInterval); clearInterval(timerInterval); };
-        } else if (timeLeft === 0 &&charIndex == roomParagraph.length) {
-                setIsTyping(false);
-                setIsActivelyTyping(false);
-
+            return () => clearInterval(dataInterval);
+        } else if (timeLeft === 0 && charIndex == roomParagraph.length) {
+            setIsTyping(false);
+            setIsActivelyTyping(false);
         }
     }, [isTyping, timeLeft, isDisabled, isCompleted]);
 
