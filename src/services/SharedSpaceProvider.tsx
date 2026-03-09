@@ -47,6 +47,8 @@ interface SharedSpaceContextType {
   namespace: string;
   setNamespace: (ns: string) => void;
   characterNumber:number;
+  setRoomSize:(roomSize:number) => void;
+  roomSize:number;
 }
 
 /* ------------------ Socket URL ------------------ */
@@ -80,6 +82,7 @@ export function SharedSpaceProvider({
   const [roomStatus, setRoomStatus] = useState<string>("");
   const [namespace, setNamespace] = useState<string>("")
   const [characterNumber, setCharacterNumber] = useState<number>(0)
+  const [roomSize, setRoomSize] = useState<number>(0);
   useEffect(() => {
     let cancelled = false;
 
@@ -146,7 +149,12 @@ export function SharedSpaceProvider({
   // Join room when connected or roomId changes
   useEffect(() => {
     if (!connected || !socketRef.current) return;
-    socketRef.current.emit("join-room", { roomId });
+    if(roomSize !== undefined){
+      socketRef.current.emit("join-room", { roomId,roomSize });
+    }else{
+      socketRef.current.emit("join-room", { roomId });
+    }
+    
     setSharedData([]);
   }, [roomId,connected]);
 
@@ -169,7 +177,9 @@ export function SharedSpaceProvider({
         roomStatus,
         namespace,
         setNamespace,
-        characterNumber
+        characterNumber,
+        setRoomSize,
+        roomSize
       }}
     >
       {children}

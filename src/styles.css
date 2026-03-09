@@ -146,6 +146,20 @@ body {
   cursor: not-allowed;
   animation: pulse 1s ease-in-out infinite;
 } */
+label{color: #586069;}
+
+#roomSize{
+  background-color: #0b66d6;
+  color: #ffffff;
+  font-weight: 600;
+  border: none;
+  padding: 12px 12px;
+  border-radius: 10px;
+  
+}
+#roomSize:hover{
+  background-color: #084b9c;
+}
 
 @keyframes pulse {
   0%, 100% { opacity: 1; }
