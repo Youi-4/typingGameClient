@@ -44,6 +44,8 @@ const SpeedTypingGame: React.FC = () => {
     const trackRefs = useRef<Record<string, HTMLDivElement | null>>({});
     const preloadedImgs = useRef<HTMLImageElement[]>([]);
     const assignedRanks = useRef<Record<string, string>>({});
+    const [settledSenders, setSettledSenders] = useState<Set<string>>(new Set());
+    const completionTimeouts = useRef<Set<string>>(new Set());
     const [charIndexBeforeMistake, setCharIndexBeforeMistake] = useState<number>(0);
     const [isActivelyTyping, setIsActivelyTyping] = useState(false);
     const [isCompleted, setIsCompleted] = useState(false);
@@ -247,6 +249,17 @@ const SpeedTypingGame: React.FC = () => {
         }, 500);
         return () => clearInterval(interval);
     }, [Object.keys(latestBySender).sort().join(',')]);
+
+    useEffect(() => {
+        Object.entries(latestBySender).forEach(([senderId, item]) => {
+            if (item.typeObject.isCompleted && !completionTimeouts.current.has(senderId)) {
+                completionTimeouts.current.add(senderId);
+                setTimeout(() => {
+                    setSettledSenders(prev => new Set(prev).add(senderId));
+                }, 800);
+            }
+        });
+    }, [sharedData]);
     return (
 
         <div className="container">
@@ -281,7 +294,7 @@ const SpeedTypingGame: React.FC = () => {
                                     alt="moving"
                                     style={{
                                         left: `${(
-                                            (item.typeObject.isCompleted)? 5:
+                                            (item.typeObject.isCompleted && settledSenders.has(senderId)) ? 5 :
                                             item.typeObject.mistakes > 0
                                                 ? (item.typeObject.charIndexBeforeMistake)
                                                 : (item.typeObject.charIndex)
