@@ -110,11 +110,17 @@ export function SharedSpaceProvider({
 
         socket.on("receive-message", (data: SharedMessage) => {
           setSharedData((prev) => {
-            const idx = prev.findIndex(m => m.senderId === data.senderId);
-            if (idx === -1) return [...prev, data];
-            const next = [...prev];
-            next[idx] = data;
-            return next;
+            const map = new Map(prev.map(m => [m.senderId, m]));
+            map.set(data.senderId, data);
+            return Array.from(map.values());
+          });
+        });
+
+        socket.on("batch-update", (batch: SharedMessage[]) => {
+          setSharedData((prev) => {
+            const map = new Map(prev.map(m => [m.senderId, m]));
+            for (const msg of batch) map.set(msg.senderId, msg);
+            return Array.from(map.values());
           });
         });
 
@@ -141,6 +147,7 @@ export function SharedSpaceProvider({
       if (socketRef.current) {
         socketRef.current.off("connect");
         socketRef.current.off("receive-message");
+        socketRef.current.off("batch-update");
         socketRef.current.off("user-left");
         socketRef.current.off("disconnect");
         socketRef.current.off("room-state");

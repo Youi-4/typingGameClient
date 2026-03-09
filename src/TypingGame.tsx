@@ -33,7 +33,7 @@ const SpeedTypingGame: React.FC = () => {
     // console.log("characterNumbercharacterNumbercharacterNumber:",characterNumber)
 
     const [localImgCounts, setLocalImgCounts] = useState<Record<string, number>>({});
-    const [paragraphMean, setParagraphMean] = useState<number>(0);
+    const paragraphMeanRef = useRef(0);
     const [typingText, setTypingText] = useState<React.JSX.Element[] | string>([]);
     const [inpFieldValue, setInpFieldValue] = useState<string>('');
     const maxTime: number = 90;
@@ -105,7 +105,7 @@ const SpeedTypingGame: React.FC = () => {
     }, [step, roomStatus]);
     const loadParagraph = (senten: string): void => {
         const num: number = senten.split(' ').length + 1;
-        setParagraphMean((senten.length - num) / num)
+        paragraphMeanRef.current = (senten.length - num) / num;
 
         const content = Array.from(senten).map((letter, index) => (
             <span
@@ -186,9 +186,7 @@ const SpeedTypingGame: React.FC = () => {
     };
 
     const resetGame = (): void => {
-        const characters = document.querySelectorAll<HTMLSpanElement>('.char');
-        characters.forEach((char) => {
-            // This removes the classes if they exist, and does nothing if they don't
+        Array.from(charactersRef.current).forEach((char) => {
             char.classList.remove('wrong', 'correct', 'active');
         });
         setIsTyping(false);
@@ -220,19 +218,12 @@ const SpeedTypingGame: React.FC = () => {
     });
 
     useEffect(() => {
-        if (isCompleted) return;
-        let wpm = Math.round(((charIndex - mistakes) / paragraphMean) / (maxTime - timeLeft) * 60);
-        setWPM(wpm < 0 || !wpm || wpm === Infinity ? 0 : wpm);
-        if (charIndex <= roomParagraph.length && (isDisabled == false && timeLeft || isTyping && timeLeft > 0)) {
-            const dataInterval = setInterval(() => {
-                sendSharedData(typeDataRef.current);
-            }, 100);
-            return () => clearInterval(dataInterval);
-        } else if (timeLeft === 0 && charIndex == roomParagraph.length) {
-            setIsTyping(false);
-            setIsActivelyTyping(false);
-        }
-    }, [timeLeft, isDisabled, isCompleted]);
+        if (isCompleted || isDisabled) return;
+        const dataInterval = setInterval(() => {
+            sendSharedData(typeDataRef.current);
+        }, 100);
+        return () => clearInterval(dataInterval);
+    }, [isDisabled, isCompleted]);
 
     // Timer uses wall-clock so event loop pressure from typing can't cause drift
     useEffect(() => {
@@ -242,6 +233,11 @@ const SpeedTypingGame: React.FC = () => {
             const elapsed = Math.floor((Date.now() - gameStartTimeRef.current!) / 1000);
             const remaining = Math.max(0, maxTime - elapsed);
             setTimeLeft(remaining);
+            if (elapsed > 0 && paragraphMeanRef.current > 0) {
+                const { charIndex, mistakes } = typeDataRef.current;
+                const wpm = Math.round(((charIndex - mistakes) / paragraphMeanRef.current) / elapsed * 60);
+                setWPM(wpm < 0 || !wpm || wpm === Infinity ? 0 : wpm);
+            }
             if (remaining <= 0) clearInterval(timerInterval);
         }, 1000);
         return () => clearInterval(timerInterval);
