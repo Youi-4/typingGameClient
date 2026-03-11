@@ -308,7 +308,7 @@ const SpeedTypingGame: React.FC = () => {
 
                         <div className="play-items">
 
-                            <div className='play-item'><b>{item.senderName,item.senderName == }</b></div>
+                            <div className='play-item'><b>{item.senderName}</b></div>
                             <div className='play-item'>
                                 <div><b>mistakes:{item.typeObject?.totalMistakes ?? 0} </b></div>
                                 <div > <b>WPM:{item.typeObject?.WPM ?? 0}</b></div>
