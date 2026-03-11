@@ -9,6 +9,7 @@ import React, {
 } from 'react';
 import './styles.css';
 import TypingArea from './TypingArea';
+import WpmGraph from './WpmGraph';
 // import { useParams } from "react-router-dom";
 import { useSharedSpace } from './services/SharedSpaceProvider';
 
@@ -55,6 +56,9 @@ const SpeedTypingGame: React.FC = () => {
     const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     const gameStartTimeRef = useRef<number | null>(null);
     const typeDataRef = useRef({ totalMistakes: 0, WPM: 0, charIndex: 0, charIndexBeforeMistake: 0, mistakes: 0, isActivelyTyping: false, isCompleted: false });
+    const wpmHistoryRef = useRef<{ elapsed: number; wpm: number }[]>([]);
+    const [wpmHistory, setWpmHistory] = useState<{ elapsed: number; wpm: number }[]>([]);
+    const [showGraph, setShowGraph] = useState(false);
     const charactersRef = useRef<HTMLCollectionOf<HTMLElement>>(document.getElementsByClassName('char') as HTMLCollectionOf<HTMLElement>);
     useEffect(() => {
         const inputField = document.getElementById('game-input-field') as HTMLInputElement;
@@ -72,6 +76,8 @@ const SpeedTypingGame: React.FC = () => {
     useEffect(() => {
         if (!isCompleted) return;
         sendSharedData({ totalMistakes, WPM, charIndex, charIndexBeforeMistake, mistakes: 0, isActivelyTyping: false,isCompleted });
+        setWpmHistory([...wpmHistoryRef.current]);
+        setShowGraph(true);
     }, [isCompleted]);
 
     useEffect(() => {
@@ -154,12 +160,13 @@ const SpeedTypingGame: React.FC = () => {
 
             if (!isTyping) setIsTyping(true);
 
+            let currentMistakes = mistakes;
             if (typedChar === currentChar) {
                 characters[charIndex].classList.add('correct');
             } else {
                 if (mistakes == 0) { setCharIndexBeforeMistake(charIndex); }
                 setMistakes(prev => prev + 1);
-
+                currentMistakes++;
                 setTotalMistakes(prev => prev + 1);
                 characters[charIndex].classList.add('wrong');
             }
@@ -171,7 +178,7 @@ const SpeedTypingGame: React.FC = () => {
                 characters[charIndex + 1].classList.add('active');
             } else {
                 setIsTyping(false);
-                if(mistakes == 0 && charIndex + 1 >= roomParagraph.length){
+                if(currentMistakes == 0 && charIndex + 1 >= roomParagraph.length){
                     setIsCompleted(true);
                 }
             }
@@ -196,6 +203,9 @@ const SpeedTypingGame: React.FC = () => {
         setMistakes(0);
         setTotalMistakes(0);
         setWPM(0);
+        wpmHistoryRef.current = [];
+        setWpmHistory([]);
+        setShowGraph(false);
         if (roomParagraph === null) return;
         loadParagraph(roomParagraph);
 
@@ -236,7 +246,9 @@ const SpeedTypingGame: React.FC = () => {
             if (elapsed > 0 && paragraphMeanRef.current > 0) {
                 const { charIndex, mistakes } = typeDataRef.current;
                 const wpm = Math.round(((charIndex - mistakes) / paragraphMeanRef.current) / elapsed * 60);
-                setWPM(wpm < 0 || !wpm || wpm === Infinity ? 0 : wpm);
+                const sanitized = wpm < 0 || !wpm || wpm === Infinity ? 0 : wpm;
+                setWPM(sanitized);
+                wpmHistoryRef.current.push({ elapsed, wpm: sanitized });
             }
             if (remaining <= 0) clearInterval(timerInterval);
         }, 1000);
@@ -278,7 +290,7 @@ const SpeedTypingGame: React.FC = () => {
         });
     }, [sharedData]);
     return (
-
+        <>
         <div className="container">
 
             <div className='lobby-form'>
@@ -296,7 +308,7 @@ const SpeedTypingGame: React.FC = () => {
 
                         <div className="play-items">
 
-                            <div className='play-item'><b>{item.senderName}</b></div>
+                            <div className='play-item'><b>{item.senderName,item.senderName == }</b></div>
                             <div className='play-item'>
                                 <div><b>mistakes:{item.typeObject?.totalMistakes ?? 0} </b></div>
                                 <div > <b>WPM:{item.typeObject?.WPM ?? 0}</b></div>
@@ -343,8 +355,15 @@ const SpeedTypingGame: React.FC = () => {
                 resetGame={resetGame}
             />
 
-        </div>
+            {showGraph && (
+                <WpmGraph
+                    data={wpmHistory}
+                    finalWpm={WPM}
+                />
+            )}
 
+        </div>
+        </>
     );
 };
 
