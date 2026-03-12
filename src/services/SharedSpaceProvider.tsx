@@ -49,6 +49,7 @@ interface SharedSpaceContextType {
   characterNumber:number;
   setRoomSize:(roomSize:number) => void;
   roomSize:number;
+  myId: string;
 }
 
 /* ------------------ Socket URL ------------------ */
@@ -83,6 +84,7 @@ export function SharedSpaceProvider({
   const [namespace, setNamespace] = useState<string>("")
   const [characterNumber, setCharacterNumber] = useState<number>(0)
   const [roomSize, setRoomSize] = useState<number>(0);
+  const [myId, setMyId] = useState<string>("");
   useEffect(() => {
     let cancelled = false;
 
@@ -102,7 +104,7 @@ export function SharedSpaceProvider({
         });
         socketRef.current = socket;
 
-        socket.on("connect", () => setConnected(true));
+        socket.on("connect", () => { setConnected(true); setMyId(socket.id ?? ""); });
 
         socket.on("disconnect", () => {
           setConnected(false);
@@ -192,7 +194,8 @@ export function SharedSpaceProvider({
         setNamespace,
         characterNumber,
         setRoomSize,
-        roomSize
+        roomSize,
+        myId
       }}
     >
       {children}
