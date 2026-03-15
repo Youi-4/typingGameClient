@@ -17,7 +17,7 @@ function Navigation() {
           <div className="dropdown">
             <button className="dropbtn">Menu</button>
             <div className="dropdown-content">
-              <a href="/Home">Home</a>
+              <a >More Coming Soon</a>
               <a href="/Log out" onClick={logout}>Logout</a>
             </div>
           </div>

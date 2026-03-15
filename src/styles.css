@@ -19,7 +19,7 @@
 .wpm-modal-header {
   display: flex;
   width: 100%;
-  justify-content: space-between;
+  
   align-items: center;
 }
 
@@ -31,6 +31,7 @@
 
 .wpm-final-stat {
   display: flex;
+  
   flex-direction: column;
   align-items: center;
   background: #f0f6ff;
@@ -40,6 +41,7 @@
 }
 
 .wpm-final-label {
+  
   font-size: 11px;
   text-transform: uppercase;
   font-weight: 700;

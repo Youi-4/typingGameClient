@@ -360,6 +360,7 @@ const SpeedTypingGame: React.FC = () => {
                 <WpmGraph
                     data={wpmHistory}
                     finalWpm={WPM}
+                    accuracy={Math.round((roomParagraph.length/(roomParagraph.length+totalMistakes))*10000)/100}
                 />
             )}
 
