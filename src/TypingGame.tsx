@@ -97,7 +97,7 @@ const SpeedTypingGame: React.FC = () => {
      const [stepMultiplayer, setStepMultiplayer] = useState(0);
     const loadingDots = ["",".","..","..."];
     
-    const IntroCountDown = [(roomSize == 1)?"":"Waiting for Players to join.", "The Race begins in", "🔴🔴5🔴🔴", "🔴🔴4🔴🔴", "🔴🔴3🔴🔴", "🟡🟡2🟡🟡", "🟡🟡1🟡🟡", "🟢🟢Go!🟢🟢"];
+    const IntroCountDown = [(roomSize == 1)?"":"Waiting for Players to join.", "The Race begins in",  "🔴🔴3🔴🔴", "🔴🔴2🔴🔴", "🟡🟡1🟡🟡", "🟢🟢Go!🟢🟢"];
     const rankRef = useRef(["/6th.png", "/5th.png", "/4th.png", "/3rd.png", "/2nd.png", "/1st.png"]);
     useEffect(() => {
 
@@ -117,7 +117,6 @@ const SpeedTypingGame: React.FC = () => {
         if (roomStatus !== "filled"){
             const timer = setTimeout(() => {
                 setStepMultiplayer(stepMultiplayer + 1);
-                console.log(stepMultiplayer,stepMultiplayer%loadingDots.length)
             }, 1000);
             return () => clearTimeout(timer);
         }else{
