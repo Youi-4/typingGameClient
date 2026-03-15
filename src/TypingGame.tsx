@@ -94,7 +94,10 @@ const SpeedTypingGame: React.FC = () => {
 
 
     const [step, setStep] = useState(0);
-    const IntroCountDown = [(roomSize == 1)?"":"Waiting for Players to join...", "The Race begins in", "🔴🔴5🔴🔴", "🔴🔴4🔴🔴", "🔴🔴3🔴🔴", "🟡🟡2🟡🟡", "🟡🟡1🟡🟡", "🟢🟢Go!🟢🟢"];
+     const [stepMultiplayer, setStepMultiplayer] = useState(0);
+    const loadingDots = ["",".","..","..."];
+    
+    const IntroCountDown = [(roomSize == 1)?"":"Waiting for Players to join.", "The Race begins in", "🔴🔴5🔴🔴", "🔴🔴4🔴🔴", "🔴🔴3🔴🔴", "🟡🟡2🟡🟡", "🟡🟡1🟡🟡", "🟢🟢Go!🟢🟢"];
     const rankRef = useRef(["/6th.png", "/5th.png", "/4th.png", "/3rd.png", "/2nd.png", "/1st.png"]);
     useEffect(() => {
 
@@ -110,6 +113,17 @@ const SpeedTypingGame: React.FC = () => {
         }
 
     }, [step, roomStatus]);
+    useEffect(()=>{
+        if (roomStatus !== "filled"){
+            const timer = setTimeout(() => {
+                setStepMultiplayer(stepMultiplayer + 1);
+                console.log(stepMultiplayer,stepMultiplayer%loadingDots.length)
+            }, 1000);
+            return () => clearTimeout(timer);
+        }else{
+            setStepMultiplayer(0)
+        }
+    },[stepMultiplayer, roomStatus]);
     const loadParagraph = (senten: string): void => {
         const num: number = senten.split(' ').length + 1;
         paragraphMeanRef.current = (senten.length - num) / num;
@@ -295,9 +309,9 @@ const SpeedTypingGame: React.FC = () => {
         <div className="container">
 
             <div className='lobby-form'>
-                <div >{step <= IntroCountDown.length && (
+                <div >{ step < IntroCountDown.length && (
                     <h2 key={step} className="animate">
-                        {IntroCountDown[step]}
+                        {(roomSize ==1)?IntroCountDown[step]:IntroCountDown[step]+loadingDots[stepMultiplayer%loadingDots.length]}
                     </h2>
 
                 )}</div>
