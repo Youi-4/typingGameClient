@@ -5,6 +5,7 @@ import {
   setProfileOnServer,
   getProfileBySession
 } from "../services/userProfileApi";
+import { useAuthContext } from "./AuthProvider";
 
 /**
  * Adjust this to match the real profile shape
@@ -35,10 +36,12 @@ export const UserProfileProvider: React.FC<UserProfileProviderProps> = ({
   children,
 }) => {
   const queryClient = useQueryClient();
-  
+  const { isAuthenticated } = useAuthContext();
+
   const profileQuery = useQuery({
     queryKey: ["userProfile"],
     queryFn: getProfileBySession,
+    enabled: isAuthenticated,
   });
 
   const mutation = useMutation({

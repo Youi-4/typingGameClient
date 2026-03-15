@@ -21,12 +21,13 @@ export const validateAuth = async (): Promise<AuthUser | AxiosError> => {
 // API call for checking authentication status
 export const fetchUserAuth = async (): Promise<AuthUser | AxiosError> => {
   try {
-    console.log("Fetching user authentication status");
     const response = await apiClient.get<AuthUser>("/auth/status");
-    console.log("fetchUserAuth response:", response.data);
     return response.data;
   } catch (error) {
-    console.log("fetchUserAuth error:", error);
+    const status = (error as any)?.response?.status;
+    if (status !== 401) {
+      console.log("fetchUserAuth error:", error);
+    }
     throw error;
   }
 };

@@ -71,7 +71,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
      Auth Check
   ===================== */
 
-  const checkAuth = async (): Promise<void> => {
+  const checkAuth = async (): Promise<boolean> => {
     setIsAuthPending(true);
     try {
       const data = await fetchUserAuth();
@@ -81,11 +81,13 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         setUser(data as User);
         setIsAuthError(false);
         setAuthErrorMessage("");
+        return true;
       } else {
         setIsAuthenticated(false);
         setUser(null);
         setIsAuthError(true);
         setAuthErrorMessage("Failed to authenticate user.");
+        return false;
       }
     } catch (error) {
       const err = error as Error;
@@ -93,6 +95,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       setUser(null);
       setIsAuthError(true);
       setAuthErrorMessage(err.message);
+      return false;
     } finally {
       setIsAuthPending(false);
     }
@@ -103,21 +106,18 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   ===================== */
 
   useEffect(() => {
-    console.log("useEffect triggered: checking auth status");
-    checkAuth();
-    
-    // Try to refresh token if user is already authenticated
-    // This ensures the token stays fresh on app reload
-    const initTokenRefresh = async () => {
-      const refreshed = await manualTokenRefresh();
-      if (refreshed) {
-        setupTokenRefresh();
+    const init = async () => {
+      const authenticated = await checkAuth();
+      if (authenticated) {
+        const refreshed = await manualTokenRefresh();
+        if (refreshed) {
+          setupTokenRefresh();
+        }
       }
     };
-    
-    initTokenRefresh();
-    
-    // Cleanup on unmount
+
+    init();
+
     return () => {
       clearTokenRefresh();
     };
