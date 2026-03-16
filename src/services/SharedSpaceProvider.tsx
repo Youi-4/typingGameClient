@@ -50,6 +50,7 @@ interface SharedSpaceContextType {
   setRoomSize:(roomSize:number) => void;
   roomSize:number;
   myId: string;
+  guest: boolean;
 }
 
 /* ------------------ Socket URL ------------------ */
@@ -85,6 +86,7 @@ export function SharedSpaceProvider({
   const [characterNumber, setCharacterNumber] = useState<number>(0)
   const [roomSize, setRoomSize] = useState<number>(0);
   const [myId, setMyId] = useState<string>("");
+  const [guest, setGuest] = useState<boolean>(true);
   useEffect(() => {
     let cancelled = false;
 
@@ -94,7 +96,7 @@ export function SharedSpaceProvider({
           ? await fetchSocketToken()
           : await fetchGuestToken();
         if (cancelled) return;
-
+        console.log("socketToken:",socketToken);
         const socket = io(SOCKET_URL + namespace, {
           withCredentials: true,
           auth: { token: socketToken },
@@ -104,7 +106,7 @@ export function SharedSpaceProvider({
         });
         socketRef.current = socket;
 
-        socket.on("connect", () => { setConnected(true); setMyId(socket.id ?? ""); });
+        socket.on("connect", () => { setConnected(true); setMyId(socket.id ?? ""); (isAuthenticated)?setGuest(false):setGuest(true) });
 
         socket.on("disconnect", () => {
           setConnected(false);
@@ -195,7 +197,8 @@ export function SharedSpaceProvider({
         characterNumber,
         setRoomSize,
         roomSize,
-        myId
+        myId,
+        guest
       }}
     >
       {children}

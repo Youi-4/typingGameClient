@@ -30,7 +30,8 @@ const SpeedTypingGame: React.FC = () => {
         roomParagraph,
         roomStatus,
         roomSize,
-        myId
+        myId,
+        guest
     } = useSharedSpace();
     // console.log("characterNumbercharacterNumbercharacterNumber:",characterNumber)
 
@@ -322,7 +323,7 @@ const SpeedTypingGame: React.FC = () => {
 
                         <div className="play-items">
 
-                            <div className='play-item'><b>{ (senderId == myId && roomSize != 1)?item.senderName+"\n(You)":item.senderName}</b></div>
+                            <div className='play-item'><b>{ (senderId == myId && roomSize != 1 && guest)?item.senderName+"\n(You)":item.senderName}</b></div>
                             <div className='play-item'>
                                 <div><b>mistakes:{item.typeObject?.totalMistakes ?? 0} </b></div>
                                 <div > <b>WPM:{item.typeObject?.WPM ?? 0}</b></div>
