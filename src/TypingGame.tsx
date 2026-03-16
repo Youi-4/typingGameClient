@@ -20,7 +20,6 @@ const SpeedTypingGame: React.FC = () => {
     // const { roomId: roomIdParam } = useParams();
     // console.log(roomIdParam,"$$$$$$$$");
     // if(roomIdParam === undefined){
-    //     console.log("HEYYYYYY")
     // }
     const {
         sharedData,
