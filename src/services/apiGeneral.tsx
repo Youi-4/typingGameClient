@@ -15,3 +15,8 @@ export async function getStats(): Promise<AccountStats> {
   return response.data.message;
 }
 
+export async function getStatsByUsername(username: string): Promise<AccountStats> {
+  const response = await apiClient.get("/user/profile/statsByUsername", { params: { username } });
+  return response.data.message;
+}
+

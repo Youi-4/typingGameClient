@@ -13,7 +13,7 @@ import WpmGraph from './WpmGraph';
 // import { useParams } from "react-router-dom";
 import { useSharedSpace } from './services/SharedSpaceProvider';
 import type { AccountStats } from './types/sharedInterfaces';
-import { updateStats, getStats } from './services/apiGeneral';
+import { updateStats, getStatsByUsername } from './services/apiGeneral';
 const imgArrWalk = ["/walk_0.png", "/walk_1.png", "/walk_2.png", "/walk_3.png", "/walk_4.png", "/walk_5.png", "/walk_6.png", "/walk_7.png", "/walk_8.png", "/walk_9.png"];
 const imgArrRun = ["/run_0.png", "/run_1.png", "/run_2.png", "/run_3.png", "/run_4.png", "/run_5.png", "/run_6.png", "/run_7.png", "/run_8.png", "/run_9.png"];
 const idleImg = "/Idle_0.png";
@@ -56,12 +56,12 @@ const SpeedTypingGame: React.FC = () => {
     const [isCompleted, setIsCompleted] = useState(false);
     const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     const gameStartTimeRef = useRef<number | null>(null);
-    const typeDataRef = useRef<{ totalMistakes: number; WPM: number; charIndex: number; charIndexBeforeMistake: number; mistakes: number; isActivelyTyping: boolean; isCompleted: boolean; accountStats?: AccountStats }>({ totalMistakes: 0, WPM: 0, charIndex: 0, charIndexBeforeMistake: 0, mistakes: 0, isActivelyTyping: false, isCompleted: false });
+    const typeDataRef = useRef({ totalMistakes: 0, WPM: 0, charIndex: 0, charIndexBeforeMistake: 0, mistakes: 0, isActivelyTyping: false, isCompleted: false });
     const wpmHistoryRef = useRef<{ elapsed: number; wpm: number }[]>([]);
     const [wpmHistory, setWpmHistory] = useState<{ elapsed: number; wpm: number }[]>([]);
     const [showGraph, setShowGraph] = useState(false);
-    const [accountStats, setAccountStats] = useState<AccountStats | null>(null);
     const [hoveredPlayer, setHoveredPlayer] = useState<string | null>(null);
+    const [playerStatsCache, setPlayerStatsCache] = useState<Record<string, AccountStats>>({});
     const charactersRef = useRef<HTMLCollectionOf<HTMLElement>>(document.getElementsByClassName('char') as HTMLCollectionOf<HTMLElement>);
     useEffect(() => {
         const inputField = document.getElementById('game-input-field') as HTMLInputElement;
@@ -70,9 +70,6 @@ const SpeedTypingGame: React.FC = () => {
         return () => document.removeEventListener("keydown", focusInput);
     }, []);
 
-    useEffect(() => {
-        getStats().then(setAccountStats).catch(() => {});
-    }, []);
 
     useEffect(() => {
         if (roomParagraph) {
@@ -93,8 +90,7 @@ const SpeedTypingGame: React.FC = () => {
         );
         if (hasOtherPlayers) {
             updateStats(WPM, won)
-                .then(() => getStats())
-                .then(stats => { if (stats) setAccountStats(stats); })
+                .then(() => setPlayerStatsCache(prev => { const next = { ...prev }; delete next[myUser]; return next; }))
                 .catch(console.error);
         }
     }, [isCompleted]);
@@ -256,7 +252,7 @@ const SpeedTypingGame: React.FC = () => {
 
     // Keep ref in sync every render so the data interval always sends fresh values
     useEffect(() => {
-        typeDataRef.current = { totalMistakes, WPM, charIndex, charIndexBeforeMistake, mistakes, isActivelyTyping, isCompleted, accountStats: accountStats ?? undefined };
+        typeDataRef.current = { totalMistakes, WPM, charIndex, charIndexBeforeMistake, mistakes, isActivelyTyping, isCompleted };
     });
 
     useEffect(() => {
@@ -347,7 +343,14 @@ const SpeedTypingGame: React.FC = () => {
 
                                 </div>
                                 <div style={{ flex: 1, position: "relative" }}
-                                    onMouseEnter={() => setHoveredPlayer(senderId)}
+                                    onMouseEnter={() => {
+                                        setHoveredPlayer(senderId);
+                                        if (!playerStatsCache[senderId]) {
+                                            getStatsByUsername(item.senderName)
+                                                .then(stats => setPlayerStatsCache(prev => ({ ...prev, [senderId]: stats })))
+                                                .catch(() => {});
+                                        }
+                                    }}
                                     onMouseLeave={() => setHoveredPlayer(null)}
                                 >
                                     <div ref={(el: HTMLDivElement | null) => {
@@ -369,7 +372,7 @@ const SpeedTypingGame: React.FC = () => {
                                         />
                                     </div>
                                     {hoveredPlayer === senderId && (() => {
-                                        const stats = senderId === myUser ? accountStats : item.typeObject.accountStats;
+                                        const stats = playerStatsCache[senderId];
                                         if (!stats) return null;
                                         return (
                                             <table style={{
