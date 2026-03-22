@@ -18,6 +18,7 @@ export interface TypeObject {
   mistakes: number;
   isActivelyTyping:boolean;
   isCompleted:boolean;
+  accountStats?: { race_avg: number; race_last: number; race_best: number; race_won: number; race_completed: number };
 }
 export interface SharedMessage {
   senderId: string;

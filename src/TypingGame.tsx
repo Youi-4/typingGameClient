@@ -13,7 +13,7 @@ import WpmGraph from './WpmGraph';
 // import { useParams } from "react-router-dom";
 import { useSharedSpace } from './services/SharedSpaceProvider';
 import type { AccountStats } from './types/sharedInterfaces';
-import { updateStats, getStatsByUsername } from './services/apiGeneral';
+import { updateStats, getStats } from './services/apiGeneral';
 const imgArrWalk = ["/walk_0.png", "/walk_1.png", "/walk_2.png", "/walk_3.png", "/walk_4.png", "/walk_5.png", "/walk_6.png", "/walk_7.png", "/walk_8.png", "/walk_9.png"];
 const imgArrRun = ["/run_0.png", "/run_1.png", "/run_2.png", "/run_3.png", "/run_4.png", "/run_5.png", "/run_6.png", "/run_7.png", "/run_8.png", "/run_9.png"];
 const idleImg = "/Idle_0.png";
@@ -31,7 +31,6 @@ const SpeedTypingGame: React.FC = () => {
         roomStatus,
         roomSize,
         myUser,
-        guest
     } = useSharedSpace();
     // console.log("characterNumbercharacterNumbercharacterNumber:",characterNumber)
 
@@ -57,18 +56,22 @@ const SpeedTypingGame: React.FC = () => {
     const [isCompleted, setIsCompleted] = useState(false);
     const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     const gameStartTimeRef = useRef<number | null>(null);
-    const typeDataRef = useRef({ totalMistakes: 0, WPM: 0, charIndex: 0, charIndexBeforeMistake: 0, mistakes: 0, isActivelyTyping: false, isCompleted: false });
+    const typeDataRef = useRef<{ totalMistakes: number; WPM: number; charIndex: number; charIndexBeforeMistake: number; mistakes: number; isActivelyTyping: boolean; isCompleted: boolean; accountStats?: AccountStats }>({ totalMistakes: 0, WPM: 0, charIndex: 0, charIndexBeforeMistake: 0, mistakes: 0, isActivelyTyping: false, isCompleted: false });
     const wpmHistoryRef = useRef<{ elapsed: number; wpm: number }[]>([]);
     const [wpmHistory, setWpmHistory] = useState<{ elapsed: number; wpm: number }[]>([]);
     const [showGraph, setShowGraph] = useState(false);
+    const [accountStats, setAccountStats] = useState<AccountStats | null>(null);
     const [hoveredPlayer, setHoveredPlayer] = useState<string | null>(null);
-    const [playerStatsCache, setPlayerStatsCache] = useState<Record<string, AccountStats>>({});
     const charactersRef = useRef<HTMLCollectionOf<HTMLElement>>(document.getElementsByClassName('char') as HTMLCollectionOf<HTMLElement>);
     useEffect(() => {
         const inputField = document.getElementById('game-input-field') as HTMLInputElement;
         const focusInput = () => inputField?.focus();
         document.addEventListener("keydown", focusInput);
         return () => document.removeEventListener("keydown", focusInput);
+    }, []);
+
+    useEffect(() => {
+        getStats().then(setAccountStats).catch(() => {});
     }, []);
 
     useEffect(() => {
@@ -83,12 +86,16 @@ const SpeedTypingGame: React.FC = () => {
         sendSharedData({ totalMistakes, WPM, charIndex, charIndexBeforeMistake, mistakes: 0, isActivelyTyping: false, isCompleted });
         setWpmHistory([...wpmHistoryRef.current]);
         setShowGraph(true);
-        const won = roomSize > 1 && !Object.entries(latestBySender).some(
+        const hasOtherPlayers = Object.keys(latestBySender).some(id => id !== myUser);
+        console.log("hasotherP",hasOtherPlayers);
+        const won = hasOtherPlayers && !Object.entries(latestBySender).some(
             ([senderId, item]) => senderId !== myUser && item.typeObject.isCompleted
         );
-        if (roomSize >1){
+        if (hasOtherPlayers) {
             updateStats(WPM, won)
-            .catch(console.error);
+                .then(() => getStats())
+                .then(stats => { if (stats) setAccountStats(stats); })
+                .catch(console.error);
         }
     }, [isCompleted]);
 
@@ -249,7 +256,7 @@ const SpeedTypingGame: React.FC = () => {
 
     // Keep ref in sync every render so the data interval always sends fresh values
     useEffect(() => {
-        typeDataRef.current = { totalMistakes, WPM, charIndex, charIndexBeforeMistake, mistakes, isActivelyTyping, isCompleted };
+        typeDataRef.current = { totalMistakes, WPM, charIndex, charIndexBeforeMistake, mistakes, isActivelyTyping, isCompleted, accountStats: accountStats ?? undefined };
     });
 
     useEffect(() => {
@@ -333,21 +340,14 @@ const SpeedTypingGame: React.FC = () => {
 
                             <div className="play-items" style={{ position: "relative" }}>
 
-                                <div className='play-item'><b>{(senderId == myUser && roomSize != 1 && guest) ? item.senderName + "\n(You)" : item.senderName}</b></div>
+                                <div className='play-item'><b>{(senderId == myUser && roomSize != 1) ? item.senderName + " (You)" : item.senderName}</b></div>
                                 <div className='play-item'>
                                     <div><b>mistakes:{item.typeObject?.totalMistakes ?? 0} </b></div>
                                     <div > <b>WPM:{item.typeObject?.WPM ?? 0}</b></div>
 
                                 </div>
                                 <div style={{ flex: 1, position: "relative" }}
-                                    onMouseEnter={() => {
-                                        setHoveredPlayer(senderId);
-                                        if (!playerStatsCache[senderId]) {
-                                            getStatsByUsername(item.senderName)
-                                                .then(stats => setPlayerStatsCache(prev => ({ ...prev, [senderId]: stats })))
-                                                .catch(console.error);
-                                        }
-                                    }}
+                                    onMouseEnter={() => setHoveredPlayer(senderId)}
                                     onMouseLeave={() => setHoveredPlayer(null)}
                                 >
                                     <div ref={(el: HTMLDivElement | null) => {
@@ -368,27 +368,31 @@ const SpeedTypingGame: React.FC = () => {
                                             }}
                                         />
                                     </div>
-                                    {hoveredPlayer === senderId && playerStatsCache[senderId] && (
-                                        <table style={{
-                                            position: "absolute",
-                                            bottom: "100%",
-                                            left: `${(
-                                                (item.typeObject.isCompleted && settledSenders.has(senderId)) ? 5 :
-                                                    item.typeObject.mistakes > 0
-                                                        ? item.typeObject.charIndexBeforeMistake
-                                                        : item.typeObject.charIndex
-                                            ) / (roomParagraph?.length ?? 1) * 100 + 1}%`,
-                                            background: "white", border: "1px solid #ccc", borderRadius: 6, padding: 6, fontSize: 12, zIndex: 10, whiteSpace: "nowrap"
-                                        }}>
-                                            <tbody>
-                                                <tr><td>Avg WPM</td><td>{Math.round(playerStatsCache[senderId].race_avg)}</td></tr>
-                                                <tr><td>Best WPM</td><td>{playerStatsCache[senderId].race_best}</td></tr>
-                                                <tr><td>Last WPM</td><td>{playerStatsCache[senderId].race_last}</td></tr>
-                                                <tr><td>Races Won</td><td>{playerStatsCache[senderId].race_won}</td></tr>
-                                                <tr><td>Races Completed</td><td>{playerStatsCache[senderId].race_completed}</td></tr>
-                                            </tbody>
-                                        </table>
-                                    )}
+                                    {hoveredPlayer === senderId && (() => {
+                                        const stats = senderId === myUser ? accountStats : item.typeObject.accountStats;
+                                        if (!stats) return null;
+                                        return (
+                                            <table style={{
+                                                position: "absolute",
+                                                bottom: "100%",
+                                                left: `${(
+                                                    (item.typeObject.isCompleted && settledSenders.has(senderId)) ? 5 :
+                                                        item.typeObject.mistakes > 0
+                                                            ? item.typeObject.charIndexBeforeMistake
+                                                            : item.typeObject.charIndex
+                                                ) / (roomParagraph?.length ?? 1) * 100 + 1}%`,
+                                                background: "white", border: "1px solid #ccc", borderRadius: 6, padding: 6, fontSize: 12, zIndex: 10, whiteSpace: "nowrap"
+                                            }}>
+                                                <tbody>
+                                                    <tr><td>Avg WPM</td><td>{Math.round(stats.race_avg)}</td></tr>
+                                                    <tr><td>Best WPM</td><td>{stats.race_best}</td></tr>
+                                                    <tr><td>Last WPM</td><td>{stats.race_last}</td></tr>
+                                                    <tr><td>Races Won</td><td>{stats.race_won}</td></tr>
+                                                    <tr><td>Races Completed</td><td>{stats.race_completed}</td></tr>
+                                                </tbody>
+                                            </table>
+                                        );
+                                    })()}
                                 </div>
                             </div>
                         </div>

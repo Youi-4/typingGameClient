@@ -11,11 +11,7 @@ export async function updateStats(wpm:number,won:boolean): Promise<AccountStats>
 }
 
 export async function getStats(): Promise<AccountStats> {
-  const response = await apiClient.post("/user/profile/getStats", { });
-  return response.data.message
-}
-
-export async function getStatsByUsername(username: string): Promise<AccountStats> {
-  const response = await apiClient.post("/user/profile/stats/byUsername", { username });
+  const response = await apiClient.post("/user/profile/getStats", {});
   return response.data.message;
 }
+
