@@ -1,17 +1,13 @@
-// TypingArea.tsx
-import React, { type ChangeEvent, type KeyboardEvent } from 'react';
 
 // Define the shape of the props
 interface TypingAreaProps {
   typingText: React.JSX.Element[] | string;
-  inpFieldValue: string;
   timeLeft: number;
   totalMistakes: number;
   WPM: number;
   resetGame: () => void;
   // Add '?' to make these optional
-  initTyping?: (event: ChangeEvent<HTMLInputElement>) => void;
-  handleKeyDown?: (event: KeyboardEvent<HTMLInputElement>) => void;
+
 }
 
 const TypingArea: React.FC<TypingAreaProps> = ({

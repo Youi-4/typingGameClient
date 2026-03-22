@@ -1,10 +1,5 @@
 import '../../styles.css'
 import { useAuthContext } from "../../context/AuthProvider";
-export interface AuthContextValue {
-  login: (email: string, password: string) => Promise<void>;
-  isAuthPending: boolean;
-  isAuthError: boolean;
-}
 function Navigation() {
     const { logout } = useAuthContext();
 
@@ -19,6 +14,7 @@ function Navigation() {
             <div className="dropdown-content">
               <a >More Coming Soon</a>
               <a href="/Log out" onClick={logout}>Logout</a>
+              <a href="/SignUp" >Sign Up</a>
             </div>
           </div>
         </li>

@@ -49,7 +49,7 @@ interface SharedSpaceContextType {
   characterNumber:number;
   setRoomSize:(roomSize:number) => void;
   roomSize:number;
-  myId: string;
+  myUser: string;
   guest: boolean;
 }
 
@@ -85,7 +85,7 @@ export function SharedSpaceProvider({
   const [namespace, setNamespace] = useState<string>("")
   const [characterNumber, setCharacterNumber] = useState<number>(0)
   const [roomSize, setRoomSize] = useState<number>(0);
-  const [myId, setMyId] = useState<string>("");
+  const [myUser, setmyUser] = useState<string>("");
   const [guest, setGuest] = useState<boolean>(true);
   useEffect(() => {
     let cancelled = false;
@@ -106,7 +106,7 @@ export function SharedSpaceProvider({
         });
         socketRef.current = socket;
 
-        socket.on("connect", () => { setConnected(true); setMyId(socket.id ?? ""); (isAuthenticated)?setGuest(false):setGuest(true) });
+        socket.on("connect", () => { setConnected(true); setmyUser(socket.id ?? ""); (isAuthenticated)?setGuest(false):setGuest(true) });
 
         socket.on("disconnect", () => {
           setConnected(false);
@@ -197,7 +197,7 @@ export function SharedSpaceProvider({
         characterNumber,
         setRoomSize,
         roomSize,
-        myId,
+        myUser,
         guest
       }}
     >

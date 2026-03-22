@@ -1,19 +1,9 @@
 import apiClient from "./apiClient";
 import { AxiosError } from "axios";
 /** ---- Types ---- */
-
+import type { AuthUser ,LoginValues} from "../types/sharedInterfaces";
 // Login form values
-export interface LoginValues {
-  userName_or_email: string;
-  password: string;
-}
 
-// Adjust to match your backend response
-export interface AuthUser {
-  id: string;
-  email: string;
-  name?: string;
-}
 
 /** ---- API calls ---- */
 

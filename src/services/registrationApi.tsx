@@ -1,10 +1,5 @@
 import apiClient from "./apiClient";
-export interface SignUpValues {
-  email: string;
-  password: string;
-  user:string;
-  verified: boolean;
-}
+import type { SignUpValues } from "../types/sharedInterfaces";
 
 export const signUp = async (values:SignUpValues) => {
   const response = await apiClient.post<SignUpValues>("/user/signup", values);

@@ -12,10 +12,11 @@ import TypingArea from './TypingArea';
 import WpmGraph from './WpmGraph';
 // import { useParams } from "react-router-dom";
 import { useSharedSpace } from './services/SharedSpaceProvider';
-
-    const imgArrWalk = ["/walk_0.png", "/walk_1.png", "/walk_2.png", "/walk_3.png", "/walk_4.png", "/walk_5.png", "/walk_6.png", "/walk_7.png", "/walk_8.png", "/walk_9.png"];
-    const imgArrRun = ["/run_0.png", "/run_1.png", "/run_2.png", "/run_3.png", "/run_4.png", "/run_5.png", "/run_6.png", "/run_7.png", "/run_8.png", "/run_9.png"];
-    const idleImg = "/Idle_0.png";
+import type { AccountStats } from './types/sharedInterfaces';
+import { updateStats, getStatsByUsername } from './services/apiGeneral';
+const imgArrWalk = ["/walk_0.png", "/walk_1.png", "/walk_2.png", "/walk_3.png", "/walk_4.png", "/walk_5.png", "/walk_6.png", "/walk_7.png", "/walk_8.png", "/walk_9.png"];
+const imgArrRun = ["/run_0.png", "/run_1.png", "/run_2.png", "/run_3.png", "/run_4.png", "/run_5.png", "/run_6.png", "/run_7.png", "/run_8.png", "/run_9.png"];
+const idleImg = "/Idle_0.png";
 const SpeedTypingGame: React.FC = () => {
     // const { roomId: roomIdParam } = useParams();
     // console.log(roomIdParam,"$$$$$$$$");
@@ -29,7 +30,7 @@ const SpeedTypingGame: React.FC = () => {
         roomParagraph,
         roomStatus,
         roomSize,
-        myId,
+        myUser,
         guest
     } = useSharedSpace();
     // console.log("characterNumbercharacterNumbercharacterNumber:",characterNumber)
@@ -60,6 +61,8 @@ const SpeedTypingGame: React.FC = () => {
     const wpmHistoryRef = useRef<{ elapsed: number; wpm: number }[]>([]);
     const [wpmHistory, setWpmHistory] = useState<{ elapsed: number; wpm: number }[]>([]);
     const [showGraph, setShowGraph] = useState(false);
+    const [hoveredPlayer, setHoveredPlayer] = useState<string | null>(null);
+    const [playerStatsCache, setPlayerStatsCache] = useState<Record<string, AccountStats>>({});
     const charactersRef = useRef<HTMLCollectionOf<HTMLElement>>(document.getElementsByClassName('char') as HTMLCollectionOf<HTMLElement>);
     useEffect(() => {
         const inputField = document.getElementById('game-input-field') as HTMLInputElement;
@@ -70,15 +73,23 @@ const SpeedTypingGame: React.FC = () => {
 
     useEffect(() => {
         if (roomParagraph) {
-            sendSharedData({ totalMistakes, WPM, charIndex, charIndexBeforeMistake, mistakes, isActivelyTyping,isCompleted });
+            sendSharedData({ totalMistakes, WPM, charIndex, charIndexBeforeMistake, mistakes, isActivelyTyping, isCompleted });
         }
     }, [roomParagraph]);
 
+
     useEffect(() => {
         if (!isCompleted) return;
-        sendSharedData({ totalMistakes, WPM, charIndex, charIndexBeforeMistake, mistakes: 0, isActivelyTyping: false,isCompleted });
+        sendSharedData({ totalMistakes, WPM, charIndex, charIndexBeforeMistake, mistakes: 0, isActivelyTyping: false, isCompleted });
         setWpmHistory([...wpmHistoryRef.current]);
         setShowGraph(true);
+        const won = roomSize > 1 && !Object.entries(latestBySender).some(
+            ([senderId, item]) => senderId !== myUser && item.typeObject.isCompleted
+        );
+        if (roomSize >1){
+            updateStats(WPM, won)
+            .catch(console.error);
+        }
     }, [isCompleted]);
 
     useEffect(() => {
@@ -94,10 +105,10 @@ const SpeedTypingGame: React.FC = () => {
 
 
     const [step, setStep] = useState(0);
-     const [stepMultiplayer, setStepMultiplayer] = useState(0);
-    const loadingDots = ["",".","..","..."];
-    
-    const IntroCountDown = [(roomSize == 1)?"":"Waiting for Players to join.", "The Race begins in",  "🔴🔴3🔴🔴", "🔴🔴2🔴🔴", "🟡🟡1🟡🟡", "🟢🟢Go!🟢🟢"];
+    const [stepMultiplayer, setStepMultiplayer] = useState(0);
+    const loadingDots = ["", ".", "..", "..."];
+
+    const IntroCountDown = [(roomSize == 1) ? "" : "Waiting for Players to join.", "The Race begins in", "🔴🔴3🔴🔴", "🔴🔴2🔴🔴", "🟡🟡1🟡🟡", "🟢🟢Go!🟢🟢"];
     const rankRef = useRef(["/6th.png", "/5th.png", "/4th.png", "/3rd.png", "/2nd.png", "/1st.png"]);
     useEffect(() => {
 
@@ -113,16 +124,16 @@ const SpeedTypingGame: React.FC = () => {
         }
 
     }, [step, roomStatus]);
-    useEffect(()=>{
-        if (roomStatus !== "filled"){
+    useEffect(() => {
+        if (roomStatus !== "filled") {
             const timer = setTimeout(() => {
                 setStepMultiplayer(stepMultiplayer + 1);
             }, 1000);
             return () => clearTimeout(timer);
-        }else{
+        } else {
             setStepMultiplayer(0)
         }
-    },[stepMultiplayer, roomStatus]);
+    }, [stepMultiplayer, roomStatus]);
     const loadParagraph = (senten: string): void => {
         const num: number = senten.split(' ').length + 1;
         paragraphMeanRef.current = (senten.length - num) / num;
@@ -147,7 +158,7 @@ const SpeedTypingGame: React.FC = () => {
 
     const handleKeyDown = (event: KeyboardEvent<HTMLInputElement>): void => {
         const characters = charactersRef.current;
-        if (event.key === 'Backspace' && charIndex > 0 && charIndex <= characters.length && timeLeft > 0 && (characters[charIndex - 1].textContent != " " || mistakes > 0) && (charIndex <= roomParagraph.length && mistakes >0)) {
+        if (event.key === 'Backspace' && charIndex > 0 && charIndex <= characters.length && timeLeft > 0 && (characters[charIndex - 1].textContent != " " || mistakes > 0) && (charIndex <= roomParagraph.length && mistakes > 0)) {
 
             if (characters[charIndex - 1].classList.contains('correct')) {
                 characters[charIndex - 1].classList.remove('correct');
@@ -192,7 +203,7 @@ const SpeedTypingGame: React.FC = () => {
                 characters[charIndex + 1].classList.add('active');
             } else {
                 setIsTyping(false);
-                if(currentMistakes == 0 && charIndex + 1 >= roomParagraph.length){
+                if (currentMistakes == 0 && charIndex + 1 >= roomParagraph.length) {
                     setIsCompleted(true);
                 }
             }
@@ -305,79 +316,111 @@ const SpeedTypingGame: React.FC = () => {
     }, [sharedData]);
     return (
         <>
-        <div className="container">
+            <div className="container">
 
-            <div className='lobby-form'>
-                <div >{ step < IntroCountDown.length && (
-                    <h2 key={step} className="animate">
-                        {(roomSize ==1)?IntroCountDown[step]:IntroCountDown[step]+loadingDots[stepMultiplayer%loadingDots.length]}
-                    </h2>
+                <div className='lobby-form'>
 
-                )}</div>
+                    <div >{step < IntroCountDown.length && (
+                        <h2 key={step} className="animate">
+                            {(roomSize == 1) ? IntroCountDown[step] : IntroCountDown[step] + loadingDots[stepMultiplayer % loadingDots.length]}
+                        </h2>
 
+                    )}</div>
 
-                {Object.entries(latestBySender).map(([senderId, item]) => (
+                    {Object.entries(latestBySender).map(([senderId, item]) => (
 
-                    <div key={senderId} className="play-panel">
+                        <div key={senderId} className="play-panel">
 
-                        <div className="play-items">
+                            <div className="play-items" style={{ position: "relative" }}>
 
-                            <div className='play-item'><b>{ (senderId == myId && roomSize != 1 && guest)?item.senderName+"\n(You)":item.senderName}</b></div>
-                            <div className='play-item'>
-                                <div><b>mistakes:{item.typeObject?.totalMistakes ?? 0} </b></div>
-                                <div > <b>WPM:{item.typeObject?.WPM ?? 0}</b></div>
+                                <div className='play-item'><b>{(senderId == myUser && roomSize != 1 && guest) ? item.senderName + "\n(You)" : item.senderName}</b></div>
+                                <div className='play-item'>
+                                    <div><b>mistakes:{item.typeObject?.totalMistakes ?? 0} </b></div>
+                                    <div > <b>WPM:{item.typeObject?.WPM ?? 0}</b></div>
 
-                            </div>
-                            <div ref={(el: HTMLDivElement | null) => {
-                                trackRefs.current[senderId] = el;
-                            }} className="race-track">
-                                <img
-                                    src={(!item.typeObject.isCompleted ) ? (item.typeObject.isActivelyTyping && !(item.typeObject.mistakes > 0)) ? ((item.typeObject.WPM > 45) ? `/Character${item.characterNumber}` + imgArrRun[localImgCounts[senderId] ?? 0] : `/Character${item.characterNumber}` + imgArrWalk[localImgCounts[senderId] ?? 0]) : `/Character${item.characterNumber}` + idleImg : (item.typeObject.mistakes == 0)?(assignedRanks.current[senderId] ?? (assignedRanks.current[senderId] = rankRef.current.pop() ?? "/1st.png")):`/Character${item.characterNumber}` + idleImg}
-                                    className={(item.typeObject.isCompleted) ? "rank-img" : "character-img"}
-                                    alt="moving"
-                                    style={{
-                                        left: `${(
-                                            (item.typeObject.isCompleted && settledSenders.has(senderId)) ? 5 :
-                                            item.typeObject.mistakes > 0
-                                                ? (item.typeObject.charIndexBeforeMistake)
-                                                : (item.typeObject.charIndex)
-                                        ) / (roomParagraph?.length ?? 1) * 100+1}%`,
-                                        transition: "left 0.2s ease-out"
+                                </div>
+                                <div style={{ flex: 1, position: "relative" }}
+                                    onMouseEnter={() => {
+                                        setHoveredPlayer(senderId);
+                                        if (!playerStatsCache[senderId]) {
+                                            getStatsByUsername(item.senderName)
+                                                .then(stats => setPlayerStatsCache(prev => ({ ...prev, [senderId]: stats })))
+                                                .catch(console.error);
+                                        }
                                     }}
-                                />
+                                    onMouseLeave={() => setHoveredPlayer(null)}
+                                >
+                                    <div ref={(el: HTMLDivElement | null) => {
+                                        trackRefs.current[senderId] = el;
+                                    }} className="race-track">
+                                        <img
+                                            src={(!item.typeObject.isCompleted) ? (item.typeObject.isActivelyTyping && !(item.typeObject.mistakes > 0)) ? ((item.typeObject.WPM > 45) ? `/Character${item.characterNumber}` + imgArrRun[localImgCounts[senderId] ?? 0] : `/Character${item.characterNumber}` + imgArrWalk[localImgCounts[senderId] ?? 0]) : `/Character${item.characterNumber}` + idleImg : (item.typeObject.mistakes == 0) ? (assignedRanks.current[senderId] ?? (assignedRanks.current[senderId] = rankRef.current.pop() ?? "/1st.png")) : `/Character${item.characterNumber}` + idleImg}
+                                            className={(item.typeObject.isCompleted) ? "rank-img" : "character-img"}
+                                            alt="moving"
+                                            style={{
+                                                left: `${(
+                                                    (item.typeObject.isCompleted && settledSenders.has(senderId)) ? 5 :
+                                                        item.typeObject.mistakes > 0
+                                                            ? (item.typeObject.charIndexBeforeMistake)
+                                                            : (item.typeObject.charIndex)
+                                                ) / (roomParagraph?.length ?? 1) * 100 + 1}%`,
+                                                transition: "left 0.2s ease-out"
+                                            }}
+                                        />
+                                    </div>
+                                    {hoveredPlayer === senderId && playerStatsCache[senderId] && (
+                                        <table style={{
+                                            position: "absolute",
+                                            bottom: "100%",
+                                            left: `${(
+                                                (item.typeObject.isCompleted && settledSenders.has(senderId)) ? 5 :
+                                                    item.typeObject.mistakes > 0
+                                                        ? item.typeObject.charIndexBeforeMistake
+                                                        : item.typeObject.charIndex
+                                            ) / (roomParagraph?.length ?? 1) * 100 + 1}%`,
+                                            background: "white", border: "1px solid #ccc", borderRadius: 6, padding: 6, fontSize: 12, zIndex: 10, whiteSpace: "nowrap"
+                                        }}>
+                                            <tbody>
+                                                <tr><td>Avg WPM</td><td>{Math.round(playerStatsCache[senderId].race_avg)}</td></tr>
+                                                <tr><td>Best WPM</td><td>{playerStatsCache[senderId].race_best}</td></tr>
+                                                <tr><td>Last WPM</td><td>{playerStatsCache[senderId].race_last}</td></tr>
+                                                <tr><td>Races Won</td><td>{playerStatsCache[senderId].race_won}</td></tr>
+                                                <tr><td>Races Completed</td><td>{playerStatsCache[senderId].race_completed}</td></tr>
+                                            </tbody>
+                                        </table>
+                                    )}
+                                </div>
                             </div>
                         </div>
-                    </div>
-                ))}
+                    ))}
+
+                </div>
+                <input
+                    type="text"
+                    className="input-field"
+                    id="game-input-field"
+                    value={inpFieldValue}
+                    onChange={initTyping}
+                    onKeyDown={handleKeyDown}
+                    disabled={isDisabled}
+                />
+                <TypingArea
+                    typingText={typingText}
+                    timeLeft={timeLeft}
+                    totalMistakes={totalMistakes}
+                    WPM={WPM}
+                    resetGame={resetGame}
+                />
+
+                {showGraph && (
+                    <WpmGraph
+                        data={wpmHistory}
+                        finalWpm={WPM}
+                        accuracy={Math.round((roomParagraph.length / (roomParagraph.length + totalMistakes)) * 10000) / 100}
+                    />
+                )}
 
             </div>
-            <input
-                type="text"
-                className="input-field"
-                id="game-input-field"
-                value={inpFieldValue}
-                onChange={initTyping}
-                onKeyDown={handleKeyDown}
-                disabled={isDisabled}
-            />
-            <TypingArea
-                typingText={typingText}
-                inpFieldValue={inpFieldValue}
-                timeLeft={timeLeft}
-                totalMistakes={totalMistakes}
-                WPM={WPM}
-                resetGame={resetGame}
-            />
-
-            {showGraph && (
-                <WpmGraph
-                    data={wpmHistory}
-                    finalWpm={WPM}
-                    accuracy={Math.round((roomParagraph.length/(roomParagraph.length+totalMistakes))*10000)/100}
-                />
-            )}
-
-        </div>
         </>
     );
 };

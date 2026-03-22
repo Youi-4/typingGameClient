@@ -1,22 +1,6 @@
 import apiClient from "./apiClient";
 import { AxiosError } from "axios";
-
-// Adjust this to match your backend user shape
-export interface AuthUser {
-  id: string;
-  email: string;
-  name?: string;
-}
-
-// Function to validate authentication status
-export const validateAuth = async (): Promise<AuthUser | AxiosError> => {
-  try {
-    const response = await apiClient.get<AuthUser>("/auth/get-loggedin-user");
-    return response.data;
-  } catch (error) {
-    throw error;
-  }
-};
+import type { AuthUser } from "../types/sharedInterfaces";
 
 // API call for checking authentication status
 export const fetchUserAuth = async (): Promise<AuthUser | AxiosError> => {
