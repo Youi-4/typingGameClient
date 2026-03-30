@@ -31,6 +31,7 @@ const SpeedTypingGame: React.FC = () => {
         roomStatus,
         roomSize,
         myUser,
+        guest,
     } = useSharedSpace();
     // console.log("characterNumbercharacterNumbercharacterNumber:",characterNumber)
 
@@ -88,7 +89,7 @@ const SpeedTypingGame: React.FC = () => {
         const won = hasOtherPlayers && !Object.entries(latestBySender).some(
             ([senderId, item]) => senderId !== myUser && item.typeObject.isCompleted
         );
-        if (hasOtherPlayers) {
+        if (hasOtherPlayers && !guest) {
             updateStats(WPM, won)
                 .then(() => setPlayerStatsCache(prev => { const next = { ...prev }; delete next[myUser]; return next; }))
                 .catch(console.error);
@@ -232,6 +233,7 @@ const SpeedTypingGame: React.FC = () => {
         setTotalMistakes(0);
         setWPM(0);
         wpmHistoryRef.current = [];
+        gameStartTimeRef.current = null;
         setWpmHistory([]);
         setShowGraph(false);
         if (roomParagraph === null) return;
@@ -266,7 +268,7 @@ const SpeedTypingGame: React.FC = () => {
     // Timer uses wall-clock so event loop pressure from typing can't cause drift
     useEffect(() => {
         if (isDisabled || isCompleted) return;
-        gameStartTimeRef.current = Date.now();
+        if (!gameStartTimeRef.current) gameStartTimeRef.current = Date.now();
         const timerInterval = setInterval(() => {
             const elapsed = Math.floor((Date.now() - gameStartTimeRef.current!) / 1000);
             const remaining = Math.max(0, maxTime - elapsed);
