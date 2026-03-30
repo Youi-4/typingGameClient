@@ -8,7 +8,7 @@ export const fetchUserAuth = async (): Promise<AuthUser | AxiosError> => {
     const response = await apiClient.get<AuthUser>("/auth/status");
     return response.data;
   } catch (error) {
-    const status = (error as any)?.response?.status;
+    const status = (error as AxiosError)?.response?.status;
     if (status !== 401) {
       console.log("fetchUserAuth error:", error);
     }

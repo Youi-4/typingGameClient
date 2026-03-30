@@ -106,7 +106,7 @@ export function SharedSpaceProvider({
         });
         socketRef.current = socket;
 
-        socket.on("connect", () => { setConnected(true); setmyUser(socket.id ?? ""); (isAuthenticated)?setGuest(false):setGuest(true) });
+        socket.on("connect", () => { setConnected(true); setmyUser(socket.id ?? ""); if (isAuthenticated) { setGuest(false); } else { setGuest(true); } });
 
         socket.on("disconnect", () => {
           setConnected(false);

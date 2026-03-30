@@ -134,7 +134,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       // Use login response directly to set auth state instead of re-checking.
       setIsAuthenticated(true);
       setUser(data as unknown as User);
-      setSessionId((data as any)?.session_id || null);
+      setSessionId((data as unknown as Record<string, unknown>)?.session_id as string || null);
       setIsAuthError(false);
       setAuthErrorMessage("");
       setupTokenRefresh();

@@ -182,10 +182,10 @@ const SpeedTypingGame: React.FC = () => {
     const initTyping = (event: ChangeEvent<HTMLInputElement>): void => {
         const characters = charactersRef.current;
         // Get only the last character typed
-        let typedChar = event.target.value.slice(-1);
+        const typedChar = event.target.value.slice(-1);
         // console.log(typedChar)
         if (charIndex < characters.length && timeLeft > 0) {
-            let currentChar = characters[charIndex].innerText;
+            const currentChar = characters[charIndex].innerText;
 
             if (!isTyping) setIsTyping(true);
 

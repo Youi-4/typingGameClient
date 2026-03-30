@@ -14,7 +14,7 @@ export interface UserProfile {
   // example:
   // id: string;
   // name: string;
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 interface UserProfileContextValue {
