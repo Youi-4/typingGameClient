@@ -2,7 +2,7 @@ import { useFormik } from 'formik';
 import { signUp } from '../../services/registrationApi';
 import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
-import { useAuthContext } from "../../context/AuthProvider";
+import { useAuthContext } from "../../context/useAuthContext";
 import type { SignUpValues,ApiError } from '../../types/sharedInterfaces';
 
 

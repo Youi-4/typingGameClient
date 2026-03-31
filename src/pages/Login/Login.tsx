@@ -1,7 +1,7 @@
 import { useFormik } from 'formik';
 import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
-import { useAuthContext } from "../../context/AuthProvider";
+import { useAuthContext } from "../../context/useAuthContext";
 import type { LoginValues,ApiError } from '../../types/sharedInterfaces';
 
 

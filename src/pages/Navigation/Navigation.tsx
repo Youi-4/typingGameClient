@@ -1,5 +1,5 @@
 import '../../styles.css'
-import { useAuthContext } from "../../context/AuthProvider";
+import { useAuthContext } from "../../context/useAuthContext";
 function Navigation() {
     const { logout } = useAuthContext();
 

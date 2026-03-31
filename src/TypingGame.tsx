@@ -11,7 +11,7 @@ import './styles.css';
 import TypingArea from './TypingArea';
 import WpmGraph from './WpmGraph';
 // import { useParams } from "react-router-dom";
-import { useSharedSpace } from './services/SharedSpaceProvider';
+import { useSharedSpace } from './services/useSharedSpace';
 import type { AccountStats } from './types/sharedInterfaces';
 import { updateStats, getStatsByUsername } from './services/apiGeneral';
 const imgArrWalk = ["/walk_0.png", "/walk_1.png", "/walk_2.png", "/walk_3.png", "/walk_4.png", "/walk_5.png", "/walk_6.png", "/walk_7.png", "/walk_8.png", "/walk_9.png"];
@@ -49,7 +49,7 @@ const SpeedTypingGame: React.FC = () => {
     const [isDisabled, setIsDisabled] = useState(true);
     const trackRefs = useRef<Record<string, HTMLDivElement | null>>({});
     const preloadedImgs = useRef<HTMLImageElement[]>([]);
-    const assignedRanks = useRef<Record<string, string>>({});
+    const [assignedRanks, setAssignedRanks] = useState<Record<string, string>>({});
     const [settledSenders, setSettledSenders] = useState<Set<string>>(new Set());
     const completionTimeouts = useRef<Set<string>>(new Set());
     const [charIndexBeforeMistake, setCharIndexBeforeMistake] = useState<number>(0);
@@ -71,6 +71,14 @@ const SpeedTypingGame: React.FC = () => {
         return () => document.removeEventListener("keydown", focusInput);
     }, []);
 
+    const latestBySender = useMemo(() => sharedData.reduce<Record<string, (typeof sharedData)[number]>>(
+        (acc, item) => {
+            const key = item.senderId || "unknown";
+            acc[key] = item;
+            return acc;
+        },
+        {}
+    ), [sharedData]);
 
     useEffect(() => {
         if (roomParagraph) {
@@ -113,11 +121,11 @@ const SpeedTypingGame: React.FC = () => {
     const loadingDots = ["", ".", "..", "..."];
 
     const IntroCountDown = [(roomSize == 1) ? "" : "Waiting for Players to join.", "The Race begins in", "🔴🔴3🔴🔴", "🔴🔴2🔴🔴", "🟡🟡1🟡🟡", "🟢🟢Go!🟢🟢"];
-    const rankRef = useRef(["/6th.png", "/5th.png", "/4th.png", "/3rd.png", "/2nd.png", "/1st.png"]);
+    const rankPool = useRef(["/6th.png", "/5th.png", "/4th.png", "/3rd.png", "/2nd.png", "/1st.png"]);
     useEffect(() => {
 
         if (step == IntroCountDown.length) {
-            setIsDisabled(false);
+            setIsDisabled(false); // eslint-disable-line react-hooks/set-state-in-effect -- intentional: enable input after countdown
         }
         else if (roomStatus === "filled" && step < IntroCountDown.length) {
             const timer = setTimeout(() => {
@@ -135,7 +143,7 @@ const SpeedTypingGame: React.FC = () => {
             }, 1000);
             return () => clearTimeout(timer);
         } else {
-            setStepMultiplayer(0)
+            setStepMultiplayer(0) // eslint-disable-line react-hooks/set-state-in-effect -- intentional: reset on room filled
         }
     }, [stepMultiplayer, roomStatus]);
     const loadParagraph = (senten: string): void => {
@@ -248,7 +256,7 @@ const SpeedTypingGame: React.FC = () => {
 
     useEffect(() => {
         if (roomParagraph === null) return;
-        loadParagraph(roomParagraph);
+        loadParagraph(roomParagraph); // eslint-disable-line react-hooks/set-state-in-effect -- intentional: parse paragraph into styled spans when received
     }, [roomParagraph]);
 
 
@@ -286,15 +294,6 @@ const SpeedTypingGame: React.FC = () => {
     }, [isDisabled, isCompleted]);
 
 
-    const latestBySender = useMemo(() => sharedData.reduce<Record<string, (typeof sharedData)[number]>>(
-        (acc, item) => {
-            const key = item.senderId || "unknown";
-            acc[key] = item;
-            return acc;
-        },
-        {}
-    ), [sharedData]);
-
     useEffect(() => {
         const senderIds = Object.keys(latestBySender);
 
@@ -313,6 +312,10 @@ const SpeedTypingGame: React.FC = () => {
         Object.entries(latestBySender).forEach(([senderId, item]) => {
             if (item.typeObject.isCompleted && !completionTimeouts.current.has(senderId)) {
                 completionTimeouts.current.add(senderId);
+                if (!assignedRanks[senderId] && item.typeObject.mistakes === 0) {
+                    const rank = rankPool.current.pop() ?? "/1st.png";
+                    setAssignedRanks(prev => ({ ...prev, [senderId]: rank }));
+                }
                 setTimeout(() => {
                     setSettledSenders(prev => new Set(prev).add(senderId));
                 }, 800);
@@ -359,7 +362,7 @@ const SpeedTypingGame: React.FC = () => {
                                         trackRefs.current[senderId] = el;
                                     }} className="race-track">
                                         <img
-                                            src={(!item.typeObject.isCompleted) ? (item.typeObject.isActivelyTyping && !(item.typeObject.mistakes > 0)) ? ((item.typeObject.WPM > 45) ? `/Character${item.characterNumber}` + imgArrRun[localImgCounts[senderId] ?? 0] : `/Character${item.characterNumber}` + imgArrWalk[localImgCounts[senderId] ?? 0]) : `/Character${item.characterNumber}` + idleImg : (item.typeObject.mistakes == 0) ? (assignedRanks.current[senderId] ?? (assignedRanks.current[senderId] = rankRef.current.pop() ?? "/1st.png")) : `/Character${item.characterNumber}` + idleImg}
+                                            src={(!item.typeObject.isCompleted) ? (item.typeObject.isActivelyTyping && !(item.typeObject.mistakes > 0)) ? ((item.typeObject.WPM > 45) ? `/Character${item.characterNumber}` + imgArrRun[localImgCounts[senderId] ?? 0] : `/Character${item.characterNumber}` + imgArrWalk[localImgCounts[senderId] ?? 0]) : `/Character${item.characterNumber}` + idleImg : (item.typeObject.mistakes == 0) ? (assignedRanks[senderId] ?? "/1st.png") : `/Character${item.characterNumber}` + idleImg}
                                             className={(item.typeObject.isCompleted) ? "rank-img" : "character-img"}
                                             alt="moving"
                                             style={{

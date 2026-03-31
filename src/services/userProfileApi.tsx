@@ -1,16 +1,5 @@
 import apiClient from "./apiClient";
-
-/**
- * Adjust these types to match your backend API response
- */
-export interface UserProfile {
-  // example fields:
-  // id: string;
-  // name: string;
-  [key: string]: any;
-}
-
-
+import type { UserProfile } from "../context/UserProfileContext";
 
 export const getProfileBySession = async (): Promise<UserProfile> => {
   const response = await apiClient.post<UserProfile>("/user/profile/get/userBySession");
@@ -34,4 +23,3 @@ export const getProfileFromServer = async (): Promise<UserProfile> => {
   const response = await apiClient.post("/user/profile/get");
   return response.data;
 };
-

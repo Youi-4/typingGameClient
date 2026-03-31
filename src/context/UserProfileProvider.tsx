@@ -1,32 +1,13 @@
-import React, { createContext, useContext } from "react";
+import React from "react";
 import type { ReactNode } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   setProfileOnServer,
   getProfileBySession
 } from "../services/userProfileApi";
-import { useAuthContext } from "./AuthProvider";
-
-/**
- * Adjust this to match the real profile shape
- */
-export interface UserProfile {
-  // example:
-  // id: string;
-  // name: string;
-  [key: string]: unknown;
-}
-
-interface UserProfileContextValue {
-  profile: UserProfile | null;
-  isSettingProfile: boolean;
-  isSettingProfileError: boolean;
-  handleProfileSelection: (selectedProfile: UserProfile) => void;
-}
-
-const UserProfileContext = createContext<UserProfileContextValue | undefined>(
-  undefined
-);
+import { useAuthContext } from "./useAuthContext";
+import { UserProfileContext } from "./UserProfileContext";
+import type { UserProfile } from "./UserProfileContext";
 
 interface UserProfileProviderProps {
   children: ReactNode;
@@ -77,14 +58,4 @@ export const UserProfileProvider: React.FC<UserProfileProviderProps> = ({
       {children}
     </UserProfileContext.Provider>
   );
-};
-
-export const useUserProfileContext = (): UserProfileContextValue => {
-  const context = useContext(UserProfileContext);
-  if (!context) {
-    throw new Error(
-      "useUserProfileContext must be used within a UserProfileProvider"
-    );
-  }
-  return context;
 };

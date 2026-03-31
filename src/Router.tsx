@@ -3,26 +3,11 @@ import Home from "./pages/Home/Home"
 import Login from "./pages/Login/Login"
 import NotFound from "./pages/Not_Found/NotFound"
 import TypingGame from "./TypingGame"
-import Navigation from "./pages/Navigation/Navigation"
 import SignUp from "./pages/SignUp/Signup.js";
-import { Outlet, Navigate } from "react-router-dom";
+import { Navigate } from "react-router-dom";
 import PrivateRoute from "./utils/PrivateRoute.jsx";
 import PublicRoute from "./utils/PublicRoute.jsx";
-import { Toaster } from "react-hot-toast";
-
-// Root layout component
-const RootLayout = () => (
-  <>
-    <Navigation />
-    <Outlet />
-    <Toaster
-      position="bottom-left"
-      toastOptions={{
-        style: { padding: "16px" },
-      }}
-    />
-  </>
-);
+import RootLayout from "./RootLayout";
 
 const router = createBrowserRouter([
   {

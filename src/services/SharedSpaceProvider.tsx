@@ -1,57 +1,14 @@
 import {
-  createContext,
-  useContext,
   useEffect,
   useRef,
   useState,
 } from "react";
 import type { ReactNode } from "react";
 import { io, Socket } from "socket.io-client";
-import { useAuthContext } from "../context/AuthProvider";
+import { useAuthContext } from "../context/useAuthContext";
 import { fetchSocketToken, fetchGuestToken } from "./authApi";
-/* ------------------ Types ------------------ */
-export interface TypeObject {
-  totalMistakes: number;
-  WPM: number;
-  charIndex: number;
-  charIndexBeforeMistake: number;
-  mistakes: number;
-  isActivelyTyping:boolean;
-  isCompleted:boolean;
-}
-export interface SharedMessage {
-  senderId: string;
-  senderName: string;
-  characterNumber:number;
-  message: string;
-  typeObject: TypeObject;
-}
-
-export interface RoomState {
-  roomId: string;
-  paragraph: string;
-  characterNumber:number;
-}
-export interface RoomStatus {
-  status: string;
-}
-
-interface SharedSpaceContextType {
-  sharedData: SharedMessage[];
-  sendSharedData: (typeObject: TypeObject) => void;
-  connected: boolean;
-  roomId: string;
-  setRoomId: (roomId: string) => void;
-  roomParagraph: string;
-  roomStatus: string;
-  namespace: string;
-  setNamespace: (ns: string) => void;
-  characterNumber:number;
-  setRoomSize:(roomSize:number) => void;
-  roomSize:number;
-  myUser: string;
-  guest: boolean;
-}
+import { SharedSpaceContext } from "./SharedSpaceContext";
+import type { SharedMessage, RoomStatus, RoomState, TypeObject } from "./SharedSpaceContext";
 
 /* ------------------ Socket URL ------------------ */
 
@@ -59,12 +16,6 @@ const SOCKET_URL = import.meta.env.VITE_SOCKET_URL
   || (import.meta.env.VITE_API_URL
     ? import.meta.env.VITE_API_URL.replace(/\/api$/, "")
     : "http://localhost:3000");
-
-/* ------------------ Context ------------------ */
-
-const SharedSpaceContext = createContext<SharedSpaceContextType | undefined>(
-  undefined
-);
 
 /* ------------------ Provider ------------------ */
 
@@ -166,13 +117,13 @@ export function SharedSpaceProvider({
   // Join room when connected or roomId changes
   useEffect(() => {
     if (!connected || !socketRef.current) return;
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- intentionally clearing data when joining a new room
+    setSharedData([]);
     if(roomSize !== undefined){
       socketRef.current.emit("join-room", { roomId,roomSize });
     }else{
       socketRef.current.emit("join-room", { roomId });
     }
-    
-    setSharedData([]);
   }, [roomId,connected]);
 
   const sendSharedData = (typeObject: TypeObject) => {
@@ -204,18 +155,4 @@ export function SharedSpaceProvider({
       {children}
     </SharedSpaceContext.Provider>
   );
-}
-
-/* ------------------ Hook ------------------ */
-
-export function useSharedSpace(): SharedSpaceContextType {
-  const context = useContext(SharedSpaceContext);
-
-  if (!context) {
-    throw new Error(
-      "useSharedSpace must be used within a SharedSpaceProvider"
-    );
-  }
-
-  return context;
 }

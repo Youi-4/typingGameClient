@@ -1,54 +1,18 @@
-import  {
-  createContext,
+import {
   useState,
-  useContext,
   useEffect,
 } from "react";
-import type {ReactNode} from "react"
+import type { ReactNode } from "react"
 import { fetchUserAuth } from "../services/authApi";
 import { loginUser, logoutUser } from "../services/LoginApi";
 import { setupTokenRefresh, clearTokenRefresh, manualTokenRefresh } from "../utils/tokenRefresh";
 import { useMutation } from "@tanstack/react-query";
-/* =====================
-   Types & Interfaces
-===================== */
-
-interface User {
-  // adjust this to match your backend user object
-  id: string;
-  email: string;
-  userName?: string;
-}
-
-interface LoginValues {
-  userName_or_email: string;
-  password: string;
-}
-
-interface AuthContextType {
-  isAuthenticated: boolean;
-  user: User | null;
-  sessionId: string | null;
-  login: (values: LoginValues) => Promise<void>;
-  logout: () => Promise<void>;
-  isAuthPending: boolean;
-  isAuthError: boolean;
-  authErrorMessage: string;
-}
+import { AuthContext } from "./AuthContext";
+import type { User, LoginValues } from "./AuthContext";
 
 interface AuthProviderProps {
   children: ReactNode;
 }
-
-/* =====================
-   Context
-===================== */
-
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
-
-/* =====================
-   Provider
-===================== */
 
 export const AuthProvider = ({ children }: AuthProviderProps) => {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
@@ -65,11 +29,6 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     mutationKey: ["logout"],
     mutationFn: logoutUser,
   });
-
-
-  /* =====================
-     Auth Check
-  ===================== */
 
   const checkAuth = async (): Promise<boolean> => {
     setIsAuthPending(true);
@@ -101,10 +60,6 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     }
   };
 
-  /* =====================
-     On Mount
-  ===================== */
-
   useEffect(() => {
     const init = async () => {
       const authenticated = await checkAuth();
@@ -123,15 +78,11 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     };
   }, []);
 
-  /* =====================
-     Login
-  ===================== */
   const login = async (values: LoginValues): Promise<void> => {
     console.log("login function called");
     try {
       setIsAuthPending(true);
       const data = await loginMutation.mutateAsync(values);
-      // Use login response directly to set auth state instead of re-checking.
       setIsAuthenticated(true);
       setUser(data as unknown as User);
       setSessionId((data as unknown as Record<string, unknown>)?.session_id as string || null);
@@ -151,15 +102,9 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     }
   };
 
-  /* =====================
-     Logout
-  ===================== */
-
   const logout = async (): Promise<void> => {
     console.log("logout function called");
     try {
-      
-      // Clear token refresh interval on logout
       clearTokenRefresh();
       await logOutMutation.mutateAsync();
       setIsAuthenticated(false);
@@ -170,18 +115,6 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       setIsAuthError(true);
     }
   };
-
-  /* =====================
-     Helpers
-  ===================== */
-
-
-  // console.log("AuthProvider state:", {
-  //   isAuthenticated,
-  //   user,
-  //   isAuthPending,
-  //   isAuthError,
-  // });
 
   return (
     <AuthContext.Provider
@@ -199,16 +132,4 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       {children}
     </AuthContext.Provider>
   );
-};
-
-/* =====================
-   Hook
-===================== */
-
-export const useAuthContext = (): AuthContextType => {
-  const context = useContext(AuthContext);
-  if (!context) {
-    throw new Error("useAuthContext must be used within an AuthProvider");
-  }
-  return context;
 };

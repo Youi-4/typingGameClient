@@ -2,8 +2,8 @@ import React from "react";
 import type { ReactNode } from "react"
 import { Navigate } from "react-router-dom";
 // import { useLocation } from "react-router-dom";
-import { useAuthContext } from "../context/AuthProvider";
-import { useUserProfileContext } from "../context/UserProfileProvider";
+import { useAuthContext } from "../context/useAuthContext";
+import { useUserProfileContext } from "../context/useUserProfileContext";
 // import NotFound from "../pages/Not_Found";
 
 interface PrivateRouteProps {
