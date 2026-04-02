@@ -41,7 +41,7 @@ export function Login() {
           name='userName_or_email' 
           id='userName_or_email' 
           type="text" 
-          placeholder="Enter username" 
+          placeholder="Enter username or email" 
           onChange={formik.handleChange} 
           value={formik.values.userName_or_email} 
         />
