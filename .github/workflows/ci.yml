@@ -28,18 +28,127 @@ jobs:
   e2e:
     runs-on: ubuntu-latest
     needs: lint-and-build
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: typeracer
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout client
+        uses: actions/checkout@v4
+
+      - name: Checkout server
+        uses: actions/checkout@v4
+        with:
+          repository: Youi-4/typingGameServer
+          path: server-repo
+          # Uncomment the line below if the server repo is private and add a
+          # personal access token to your repo secrets as GH_TOKEN
+          # token: ${{ secrets.GH_TOKEN }}
 
       - uses: actions/setup-node@v4
         with:
           node-version: 20
           cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            server-repo/package-lock.json
 
-      - run: npm ci
+      - name: Install client dependencies
+        run: npm ci
+
+      - name: Install server dependencies
+        run: npm ci
+        working-directory: server-repo
 
       - name: Install Playwright browsers
         run: npx playwright install --with-deps chromium
+
+      - name: Initialise database
+        env:
+          PGPASSWORD: postgres
+        run: |
+          psql -h localhost -U postgres -d typeracer << 'SQL'
+            CREATE TABLE IF NOT EXISTS account (
+              accountid          SERIAL PRIMARY KEY,
+              emailaddress       VARCHAR(255) UNIQUE NOT NULL,
+              password           VARCHAR(255) NOT NULL,
+              "user"             VARCHAR(255) UNIQUE NOT NULL,
+              verificationstatus BOOLEAN DEFAULT false,
+              sessionid          VARCHAR(255),
+              firstname          VARCHAR(255),
+              lastname           VARCHAR(255)
+            );
+            CREATE TABLE IF NOT EXISTS account_stats (
+              accountid      INT PRIMARY KEY REFERENCES account(accountid),
+              race_avg       DECIMAL,
+              race_last      INT,
+              race_best      INT,
+              race_won       INT,
+              race_completed INT
+            );
+          SQL
+
+      - name: Seed test user
+        working-directory: server-repo
+        run: |
+          cat > seed.mjs << 'EOF'
+          import bcrypt from 'bcrypt';
+          import pg from 'pg';
+          const { Client } = pg;
+          const client = new Client({
+            host: 'localhost', port: 5432,
+            user: 'postgres', password: 'postgres',
+            database: 'typeracer',
+          });
+          await client.connect();
+          const hash = await bcrypt.hash('test', 10);
+          const { rows } = await client.query(
+            `INSERT INTO account (emailaddress, password, "user", verificationstatus)
+             VALUES ($1, $2, $3, true) RETURNING accountid`,
+            ['test@test.com', hash, 'test']
+          );
+          await client.query(
+            `INSERT INTO account_stats (accountid) VALUES ($1)`,
+            [rows[0].accountid]
+          );
+          await client.end();
+          console.log('Test user seeded');
+          EOF
+          node seed.mjs
+
+      - name: Start backend server
+        working-directory: server-repo
+        env:
+          NODE_ENV: development
+          POSTGRES_HOST: localhost
+          POSTGRES_PORT: '5432'
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: typeracer
+          PORT: '3000'
+          SECRET_KEY: ${{ secrets.SECRET_KEY || 'ci-test-secret-key' }}
+          CLIENT_URL: http://localhost:5173
+        run: node server.js &
+
+      - name: Wait for backend to be ready
+        run: |
+          for i in $(seq 1 30); do
+            nc -z localhost 3000 && echo "Server is up" && break
+            echo "Waiting for server... ($i/30)"
+            sleep 1
+          done
 
       - name: Run E2E tests
         run: npm run test:e2e
