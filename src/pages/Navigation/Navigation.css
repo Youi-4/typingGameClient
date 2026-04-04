@@ -12,8 +12,8 @@
 }
 
 .nav-inner {
-  display: flex;
-  justify-content: space-between;
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
   align-items: center;
   height: 64px;
   padding: 0 32px;
@@ -28,6 +28,7 @@
   color: var(--accent);
   text-decoration: none;
   font-family: system-ui, sans-serif;
+  justify-self: start;
 }
 
 .nav-links {
@@ -68,6 +69,7 @@
   display: flex;
   align-items: center;
   gap: 8px;
+  justify-self: end;
 }
 
 .nav-icon-btn {
@@ -102,6 +104,14 @@
   border: 2px solid var(--bg-surface);
   box-shadow: 0 1px 4px rgba(0,0,0,0.2);
   flex-shrink: 0;
+  padding: 0;
+  background: none;
+  cursor: pointer;
+  transition: box-shadow 0.15s;
+}
+
+.nav-avatar:hover {
+  box-shadow: 0 0 0 2px var(--accent);
 }
 
 .nav-avatar img {

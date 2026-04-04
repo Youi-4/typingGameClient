@@ -1,7 +1,7 @@
-import React from 'react';
+import type { ReactNode } from 'react';
 
 interface TypingAreaProps {
-  typingText: React.JSX.Element[] | string;
+  typingText: ReactNode;
   timeLeft: number;
   totalMistakes: number;
   WPM: number;
@@ -9,14 +9,14 @@ interface TypingAreaProps {
   onPlayAgain: () => void;
 }
 
-const TypingArea: React.FC<TypingAreaProps> = ({
+const TypingArea = ({
   typingText,
   timeLeft,
   totalMistakes,
   WPM,
   isFinished,
   onPlayAgain,
-}) => {
+}: TypingAreaProps) => {
   return (
     <div className="section">
       <div className="section1">

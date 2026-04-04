@@ -35,9 +35,9 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     try {
       const data = await fetchUserAuth();
 
-      if (data) {
+      if ("success" in data && data.success) {
         setIsAuthenticated(true);
-        setUser(data as User);
+        setUser(data.user);
         setIsAuthError(false);
         setAuthErrorMessage("");
         return true;
@@ -79,17 +79,15 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   }, []);
 
   const login = async (values: LoginValues): Promise<void> => {
-    console.log("login function called");
     try {
       setIsAuthPending(true);
       const data = await loginMutation.mutateAsync(values);
       setIsAuthenticated(true);
-      setUser(data as unknown as User);
-      setSessionId((data as unknown as Record<string, unknown>)?.session_id as string || null);
+      setUser(data.user as User);
+      setSessionId(null);
       setIsAuthError(false);
       setAuthErrorMessage("");
       setupTokenRefresh();
-      console.log("Login successful, user set from login response");
     } catch (error) {
       const err = error as Error;
       setIsAuthenticated(false);
@@ -103,7 +101,6 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   };
 
   const logout = async (): Promise<void> => {
-    console.log("logout function called");
     try {
       clearTokenRefresh();
       await logOutMutation.mutateAsync();
@@ -111,7 +108,6 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       setUser(null);
       setSessionId(null);
     } catch (error) {
-      console.error("logout onError:", error);
       setIsAuthError(true);
     }
   };

@@ -1,5 +1,39 @@
 import { test, expect } from "@playwright/test";
 
+async function waitForGeneratedRoomCode(page: import("@playwright/test").Page) {
+  await expect
+    .poll(async () => {
+      const hintText = (await page.locator(".lobby-hint").textContent()) ?? "";
+      return hintText.replace("Room code:", "").trim();
+    })
+    .not.toBe("");
+}
+
+async function createPrivateLobby(page: import("@playwright/test").Page, size: number) {
+  await page.goto("/Home");
+  await waitForGeneratedRoomCode(page);
+  await page.getByLabel("Players:").selectOption(String(size));
+  await page.getByRole("button", { name: "Create lobby" }).click();
+  await expect(page).toHaveURL(/\/Play\//);
+  return page.url().split("/").pop()!;
+}
+
+async function joinPrivateLobby(page: import("@playwright/test").Page, lobbyCode: string) {
+  await page.goto("/Home");
+  await page.getByRole("textbox", { name: "room code" }).fill(lobbyCode);
+  await page.getByRole("button", { name: "Join lobby" }).click();
+  await expect(page).toHaveURL(new RegExp(`/Play/${lobbyCode}$`));
+}
+
+async function waitForPlayerPanels(page: import("@playwright/test").Page, count: number) {
+  await expect(page.locator(".play-panel")).toHaveCount(count, { timeout: 10000 });
+}
+
+async function waitForGameInputEnabled(page: import("@playwright/test").Page) {
+  await page.locator("#paragraph").waitFor({ state: "visible" });
+  await expect(page.locator("#game-input-field")).toBeEnabled({ timeout: 15000 });
+}
+
 test("home page loads and can create a lobby", async ({ page }) => {
   await page.goto("/Home");
   await expect(page.getByRole("button", { name: "Create lobby" })).toBeVisible();
@@ -300,14 +334,8 @@ test("Private game with two players", async ({ browser }) => {
   const contexts = await Promise.all([browser.newContext(), browser.newContext()]);
   const players = await Promise.all(contexts.map(ctx => ctx.newPage()));
 
-  await players[0].goto('/Home');
-  await players[0].getByLabel('Players:').selectOption('2');
-  await players[0].getByRole('button', { name: 'Create lobby' }).click();
-  const lobbyCode = players[0].url().split('/').pop()!;
-
-  await players[1].goto('/Home');
-  await players[1].getByRole('textbox', { name: 'room code' }).fill(lobbyCode);
-  await players[1].getByRole('button', { name: 'Join lobby' }).click();
+  const lobbyCode = await createPrivateLobby(players[0], 2);
+  await joinPrivateLobby(players[1], lobbyCode);
 
   await Promise.all(players.map(p => p.locator('#paragraph').waitFor({ state: 'visible' })));
 
@@ -343,18 +371,9 @@ test("Private game with three players", async ({ browser }) => {
   const contexts = await Promise.all([browser.newContext(), browser.newContext(), browser.newContext()]);
   const players = await Promise.all(contexts.map(ctx => ctx.newPage()));
 
-  await players[0].goto('/Home');
-  await players[0].getByLabel('Players:').selectOption('3');
-  await players[0].getByRole('button', { name: 'Create lobby' }).click();
-  const lobbyCode = players[0].url().split('/').pop()!;
-
-  await players[1].goto('/Home');
-  await players[1].getByRole('textbox', { name: 'room code' }).fill(lobbyCode);
-  await players[1].getByRole('button', { name: 'Join lobby' }).click();
-
-  await players[2].goto('/Home');
-  await players[2].getByRole('textbox', { name: 'room code' }).fill(lobbyCode);
-  await players[2].getByRole('button', { name: 'Join lobby' }).click();
+  const lobbyCode = await createPrivateLobby(players[0], 3);
+  await joinPrivateLobby(players[1], lobbyCode);
+  await joinPrivateLobby(players[2], lobbyCode);
 
   await Promise.all(players.map(p => p.locator('#paragraph').waitFor({ state: 'visible' })));
 
@@ -393,15 +412,10 @@ test("Private game with four players", async ({ browser }) => {
   const contexts = await Promise.all([browser.newContext(), browser.newContext(), browser.newContext(), browser.newContext()]);
   const players = await Promise.all(contexts.map(ctx => ctx.newPage()));
 
-  await players[0].goto('/Home');
-  await players[0].getByLabel('Players:').selectOption('4');
-  await players[0].getByRole('button', { name: 'Create lobby' }).click();
-  const lobbyCode = players[0].url().split('/').pop()!;
+  const lobbyCode = await createPrivateLobby(players[0], 4);
 
   for (const player of players.slice(1)) {
-    await player.goto('/Home');
-    await player.getByRole('textbox', { name: 'room code' }).fill(lobbyCode);
-    await player.getByRole('button', { name: 'Join lobby' }).click();
+    await joinPrivateLobby(player, lobbyCode);
   }
 
   await Promise.all(players.map(p => p.locator('#paragraph').waitFor({ state: 'visible' })));
@@ -444,15 +458,10 @@ test("Private game with five players", async ({ browser }) => {
   const contexts = await Promise.all([browser.newContext(), browser.newContext(), browser.newContext(), browser.newContext(), browser.newContext()]);
   const players = await Promise.all(contexts.map(ctx => ctx.newPage()));
 
-  await players[0].goto('/Home');
-  await players[0].getByLabel('Players:').selectOption('5');
-  await players[0].getByRole('button', { name: 'Create lobby' }).click();
-  const lobbyCode = players[0].url().split('/').pop()!;
+  const lobbyCode = await createPrivateLobby(players[0], 5);
 
   for (const player of players.slice(1)) {
-    await player.goto('/Home');
-    await player.getByRole('textbox', { name: 'room code' }).fill(lobbyCode);
-    await player.getByRole('button', { name: 'Join lobby' }).click();
+    await joinPrivateLobby(player, lobbyCode);
   }
 
   await Promise.all(players.map(p => p.locator('#paragraph').waitFor({ state: 'visible' })));
@@ -482,5 +491,117 @@ test("Private game with five players", async ({ browser }) => {
   await expect(players[4].locator('.rank-img').nth(4)).toHaveAttribute('src', /5th.png/, { timeout: 5000 });
 
   await Promise.all(players.map(p => p.close()));
+  await Promise.all(contexts.map(c => c.close()));
+});
+
+
+
+
+
+test("Leaving a private game removes that player from the remaining player's view", async ({ browser }) => {
+  test.setTimeout(120000);
+
+  const contexts = await Promise.all([browser.newContext(), browser.newContext()]);
+  const [hostPage, guestPage] = await Promise.all(contexts.map(ctx => ctx.newPage()));
+
+  const lobbyCode = await createPrivateLobby(hostPage, 2);
+  await joinPrivateLobby(guestPage, lobbyCode);
+
+  await Promise.all([
+    waitForPlayerPanels(hostPage, 2),
+    waitForPlayerPanels(guestPage, 2),
+  ]);
+
+  await guestPage.getByRole("link", { name: "Home" }).click();
+  await expect(guestPage).toHaveURL(/\/Home$/);
+
+  await waitForPlayerPanels(hostPage, 1);
+
+  await Promise.all([hostPage.close(), guestPage.close()]);
+  await Promise.all(contexts.map(c => c.close()));
+});
+
+
+
+test("A player can join a new private lobby after leaving a previous one", async ({ browser }) => {
+  test.setTimeout(120000);
+
+  const contexts = await Promise.all([
+    browser.newContext(),
+    browser.newContext(),
+    browser.newContext(),
+  ]);
+  const [firstHostPage, returningPlayerPage, secondHostPage] = await Promise.all(
+    contexts.map(ctx => ctx.newPage())
+  );
+
+  const firstLobbyCode = await createPrivateLobby(firstHostPage, 2);
+  await joinPrivateLobby(returningPlayerPage, firstLobbyCode);
+
+  await Promise.all([
+    waitForPlayerPanels(firstHostPage, 2),
+    waitForPlayerPanels(returningPlayerPage, 2),
+  ]);
+
+  await returningPlayerPage.getByRole("link", { name: "Home" }).click();
+  await expect(returningPlayerPage).toHaveURL(/\/Home$/);
+
+  const secondLobbyCode = await createPrivateLobby(secondHostPage, 2);
+  await returningPlayerPage.getByRole("textbox", { name: "room code" }).fill(secondLobbyCode);
+  await returningPlayerPage.getByRole("button", { name: "Join lobby" }).click();
+  await expect(returningPlayerPage).toHaveURL(new RegExp(`/Play/${secondLobbyCode}$`));
+
+  await Promise.all([
+    waitForPlayerPanels(secondHostPage, 2),
+    waitForPlayerPanels(returningPlayerPage, 2),
+    waitForGameInputEnabled(secondHostPage),
+    waitForGameInputEnabled(returningPlayerPage),
+  ]);
+
+  await Promise.all([firstHostPage.close(), returningPlayerPage.close(), secondHostPage.close()]);
+  await Promise.all(contexts.map(c => c.close()));
+});
+
+
+
+test("A host can create a new private lobby after leaving a previous one", async ({ browser }) => {
+  test.setTimeout(120000);
+
+  const contexts = await Promise.all([
+    browser.newContext(),
+    browser.newContext(),
+    browser.newContext(),
+  ]);
+  const [returningHostPage, firstGuestPage, secondGuestPage] = await Promise.all(
+    contexts.map(ctx => ctx.newPage())
+  );
+
+  const firstLobbyCode = await createPrivateLobby(returningHostPage, 2);
+  await joinPrivateLobby(firstGuestPage, firstLobbyCode);
+
+  await Promise.all([
+    waitForPlayerPanels(returningHostPage, 2),
+    waitForPlayerPanels(firstGuestPage, 2),
+  ]);
+
+  await returningHostPage.getByRole("link", { name: "Home" }).click();
+  await expect(returningHostPage).toHaveURL(/\/Home$/);
+
+  await waitForGeneratedRoomCode(returningHostPage);
+  await returningHostPage.getByLabel("Players:").selectOption("2");
+  await returningHostPage.getByRole("button", { name: "Create lobby" }).click();
+  await expect(returningHostPage).toHaveURL(/\/Play\//);
+  const secondLobbyCode = returningHostPage.url().split("/").pop()!;
+
+  await joinPrivateLobby(secondGuestPage, secondLobbyCode);
+
+  await Promise.all([
+    waitForPlayerPanels(returningHostPage, 2),
+    waitForPlayerPanels(secondGuestPage, 2),
+    waitForGameInputEnabled(returningHostPage),
+    waitForGameInputEnabled(secondGuestPage),
+  ]);
+
+  await Promise.all([returningHostPage.close(), firstGuestPage.close(), secondGuestPage.close()]);
   await Promise.all(contexts.map(c => c.close()));
 });

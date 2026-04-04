@@ -1,15 +1,35 @@
-import { Bell, Settings, Sun, Moon } from 'lucide-react';
-import { useLocation, Link } from 'react-router-dom';
+import { Bell, Sun, Moon, LogOut } from 'lucide-react';
+import { useLocation, Link, useNavigate } from 'react-router-dom';
+import { useRef, useState, useEffect } from 'react';
 import { useAuthContext } from '../../context/useAuthContext';
 import { useTheme } from '../../context/ThemeContext';
 import './Navigation.css';
 
 function Navigation() {
-  const { isAuthenticated } = useAuthContext();
+  const { isAuthenticated, user, logout } = useAuthContext();
   const { theme, toggleTheme } = useTheme();
   const { pathname } = useLocation();
+  const navigate = useNavigate();
+  const [dropdownOpen, setDropdownOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
 
   const active = (path: string) => pathname.toLowerCase().startsWith(path.toLowerCase()) ? 'active' : '';
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+        setDropdownOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const handleLogout = async () => {
+    setDropdownOpen(false);
+    await logout();
+    navigate('/Home');
+  };
 
   return (
     <nav className="nav-bar">
@@ -32,15 +52,28 @@ function Navigation() {
               <button className="nav-icon-btn">
                 <Bell size={20} />
               </button>
-              <button className="nav-icon-btn">
-                <Settings size={20} />
-              </button>
-              <div className="nav-avatar">
-                <img
-                  src="https://lh3.googleusercontent.com/aida-public/AB6AXuAtz9_tYaXaQyB5wYu7cXyIdO1LVYhDPKLIpf8e2zZMHd3mt5Q9XRp6SaBtPHwP_D6QI6H24qrs2hrFiKGr2XPgkT7wcZ4k0b17l3D3pUX7CUhtm7-3s-kb02R_AlQzqz-AvZ1rwVPHL8yvPos-_AXBMbdeqBDiUVI0XzawNGLi1c-3_TY3UnJ_PjqWOO4FaA3TJGW5vTh53LV6QP_wGoq-AC0xxVIiMt9ARO4IWuB9d2aefYgS-rfP6PkOwPa0NCsI9hmmA4ppU08"
-                  alt="Profile"
-                  referrerPolicy="no-referrer"
-                />
+
+              <div className="nav-dropdown-wrap" ref={dropdownRef}>
+                <button className="nav-avatar" onClick={() => setDropdownOpen(o => !o)}>
+                  <img
+                    src={`https://ui-avatars.com/api/?name=${encodeURIComponent(user?.userName ?? 'U')}&background=1a73e8&color=fff&bold=true`}
+                    alt="Profile"
+                  />
+                </button>
+
+                {dropdownOpen && (
+                  <div className="nav-dropdown">
+                    {user?.userName && (
+                      <div className="nav-dropdown-item" style={{ opacity: 0.6, cursor: 'default', fontWeight: 700 }}>
+                        {user.userName}
+                      </div>
+                    )}
+                    <button className="nav-dropdown-item" onClick={handleLogout}>
+                      <LogOut size={15} />
+                      Log out
+                    </button>
+                  </div>
+                )}
               </div>
             </>
           ) : (

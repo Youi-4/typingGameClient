@@ -31,6 +31,9 @@ export interface RoomStatus {
 export interface SharedSpaceContextType {
   sharedData: SharedMessage[];
   sendSharedData: (typeObject: TypeObject) => void;
+  leaveRoom: (roomId?: string) => void;
+  scheduleLeaveRoom: (roomId?: string) => void;
+  cancelScheduledLeaveRoom: (roomId?: string) => void;
   connected: boolean;
   roomId: string;
   setRoomId: (roomId: string) => void;
@@ -39,8 +42,8 @@ export interface SharedSpaceContextType {
   namespace: string;
   setNamespace: (ns: string) => void;
   characterNumber: number;
-  setRoomSize: (roomSize: number) => void;
-  roomSize: number;
+  setRoomSize: (roomSize: number | null) => void;
+  roomSize: number | null;
   myUser: string;
   guest: boolean;
 }

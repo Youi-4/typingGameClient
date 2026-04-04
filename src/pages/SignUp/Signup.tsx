@@ -1,43 +1,71 @@
-import { useFormik } from 'formik';
-import { motion } from 'framer-motion';
-import { signUp } from '../../services/registrationApi';
-import { useNavigate } from "react-router-dom";
+import { useFormik } from "formik";
+import { motion } from "framer-motion";
+import { Link, useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
+
 import { useAuthContext } from "../../context/useAuthContext";
-import type { SignUpValues, ApiError } from '../../types/sharedInterfaces';
-import '../Auth/Auth.css';
+import { signUp } from "../../services/registrationApi";
+import type { ApiError, SignupRequestDto } from "../../types/api";
+import "../Auth/Auth.css";
 
 export function SignUp() {
   const { login } = useAuthContext();
   const navigate = useNavigate();
 
-  const onSubmit = async (values: SignUpValues) => {
+  const onSubmit = async (values: SignupRequestDto) => {
     if (!values.user) {
-      toast.error('Username is required.'); return;
-    } else if (!/^[a-zA-Z0-9_-]{3,20}$/.test(values.user)) {
-      toast.error('Username: 3–20 characters, letters/numbers/_ and - only.'); return;
+      toast.error("Username is required.");
+      return;
+    }
+
+    if (!/^[a-zA-Z0-9_-]{3,20}$/.test(values.user)) {
+      toast.error("Username: 3–20 characters, letters/numbers/_ and - only.");
+      return;
     }
 
     if (!values.email) {
-      toast.error('Email is required.'); return;
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(values.email)) {
-      toast.error('Enter a valid email address.'); return;
+      toast.error("Email is required.");
+      return;
+    }
+
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(values.email)) {
+      toast.error("Enter a valid email address.");
+      return;
     }
 
     if (!values.password) {
-      toast.error('Password is required.'); return;
-    } else if (values.password.length < 6) {
-      toast.error('Password must be at least 6 characters.'); return;
-    } else if (values.password.length > 64) {
-      toast.error('Password must be 64 characters or fewer.'); return;
-    } else if (!/[A-Z]/.test(values.password)) {
-      toast.error('Password must contain at least one uppercase letter.'); return;
-    } else if (!/[a-z]/.test(values.password)) {
-      toast.error('Password must contain at least one lowercase letter.'); return;
-    } else if (!/[0-9]/.test(values.password)) {
-      toast.error('Password must contain at least one number.'); return;
-    } else if (!/[@$!%*?&_#^()]/.test(values.password)) {
-      toast.error('Password must contain a special character (@$!%*?&_#^()).'); return;
+      toast.error("Password is required.");
+      return;
+    }
+
+    if (values.password.length < 6) {
+      toast.error("Password must be at least 6 characters.");
+      return;
+    }
+
+    if (values.password.length > 64) {
+      toast.error("Password must be 64 characters or fewer.");
+      return;
+    }
+
+    if (!/[A-Z]/.test(values.password)) {
+      toast.error("Password must contain at least one uppercase letter.");
+      return;
+    }
+
+    if (!/[a-z]/.test(values.password)) {
+      toast.error("Password must contain at least one lowercase letter.");
+      return;
+    }
+
+    if (!/[0-9]/.test(values.password)) {
+      toast.error("Password must contain at least one number.");
+      return;
+    }
+
+    if (!/[@$!%*?&_#^()]/.test(values.password)) {
+      toast.error("Password must contain a special character (@$!%*?&_#^()).");
+      return;
     }
 
     try {
@@ -47,12 +75,14 @@ export function SignUp() {
       navigate("/Home");
     } catch (err: unknown) {
       const error = err as ApiError;
-      toast.error(`Sign up failed: ${error.response?.data?.error}`);
+      toast.error(
+        `Sign up failed: ${error.response?.data?.error ?? error.response?.data?.message ?? "Unknown error"}`
+      );
     }
   };
 
   const formik = useFormik({
-    initialValues: { email: '', password: '', verified: true, user: '' },
+    initialValues: { email: "", password: "", verified: true, user: "" },
     onSubmit,
   });
 
@@ -107,7 +137,7 @@ export function SignUp() {
                 id="password"
                 name="password"
                 type="password"
-                placeholder="••••••••"
+                placeholder="Create a password"
                 value={formik.values.password}
                 onChange={formik.handleChange}
               />
@@ -126,7 +156,13 @@ export function SignUp() {
           <div className="auth-divider"><span>Or continue with</span></div>
 
           <div className="auth-social auth-social--center">
-            <button className="auth-social-btn" type="button">
+            <button
+              className="auth-social-btn"
+              type="button"
+              onClick={() => {
+                window.location.href = `${(import.meta.env.VITE_API_URL || "http://localhost:3000/api").replace(/\/api$/, "")}/api/auth/google`;
+              }}
+            >
               <img src="https://www.google.com/favicon.ico" alt="Google" referrerPolicy="no-referrer" />
               Google
             </button>
@@ -134,14 +170,9 @@ export function SignUp() {
 
           <p className="auth-footer">
             Already have an account?
-            <a href="/Login">Log in</a>
+            <Link to="/Login">Log in</Link>
           </p>
         </div>
-
-        <p className="auth-terms">
-          By creating an account you agree to our{' '}
-          <a href="#">Terms of Service</a> and <a href="#">Privacy Policy</a>.
-        </p>
       </motion.div>
     </div>
   );

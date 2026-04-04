@@ -3,10 +3,10 @@ import Home from "./pages/Home/Home"
 import Login from "./pages/Login/Login"
 import NotFound from "./pages/Not_Found/NotFound"
 import TypingGame from "./TypingGame"
-import SignUp from "./pages/SignUp/Signup.js";
+import SignUp from "./pages/SignUp/Signup";
 import { Navigate } from "react-router-dom";
-import PrivateRoute from "./utils/PrivateRoute.jsx";
-import PublicRoute from "./utils/PublicRoute.jsx";
+import PrivateRoute from "./utils/PrivateRoute";
+import PublicRoute from "./utils/PublicRoute";
 import RootLayout from "./RootLayout";
 
 function TypingGameKeyed() {

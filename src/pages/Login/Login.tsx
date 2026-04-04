@@ -1,29 +1,31 @@
-import { useFormik } from 'formik';
-import { motion } from 'framer-motion';
-
-import { useNavigate } from "react-router-dom";
+import { useFormik } from "formik";
+import { motion } from "framer-motion";
+import { Link, useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
+
 import { useAuthContext } from "../../context/useAuthContext";
-import type { LoginValues, ApiError } from '../../types/sharedInterfaces';
-import '../Auth/Auth.css';
+import type { ApiError, LoginRequestDto } from "../../types/api";
+import "../Auth/Auth.css";
 
 export function Login() {
   const { login, isAuthPending } = useAuthContext();
   const navigate = useNavigate();
 
-  const onSubmit = async (values: LoginValues) => {
+  const onSubmit = async (values: LoginRequestDto) => {
     try {
       await login(values);
       toast.success("Logged in successfully");
       navigate("/Home");
     } catch (err: unknown) {
       const error = err as ApiError;
-      toast.error(`Login failed: ${error.response?.data?.error}`);
+      toast.error(
+        `Login failed: ${error.response?.data?.error ?? error.response?.data?.message ?? "Unknown error"}`
+      );
     }
   };
 
   const formik = useFormik({
-    initialValues: { userName_or_email: '', password: '' },
+    initialValues: { userName_or_email: "", password: "" },
     onSubmit,
   });
 
@@ -65,7 +67,7 @@ export function Login() {
                 id="password"
                 name="password"
                 type="password"
-                placeholder="••••••••"
+                placeholder="Enter your password"
                 value={formik.values.password}
                 onChange={formik.handleChange}
               />
@@ -78,22 +80,28 @@ export function Login() {
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
             >
-              {isAuthPending ? 'Logging in...' : 'Log In'}
+              {isAuthPending ? "Logging in..." : "Log In"}
             </motion.button>
           </form>
 
           <div className="auth-divider"><span>Or continue with</span></div>
 
           <div className="auth-social auth-social--center">
-            <button className="auth-social-btn" type="button">
+            <button
+              className="auth-social-btn"
+              type="button"
+              onClick={() => {
+                window.location.href = `${(import.meta.env.VITE_API_URL || "http://localhost:3000/api").replace(/\/api$/, "")}/api/auth/google`;
+              }}
+            >
               <img src="https://www.google.com/favicon.ico" alt="Google" referrerPolicy="no-referrer" />
               Google
             </button>
           </div>
 
           <p className="auth-footer">
-            Don't have an account?
-            <a href="/SignUp">Sign up</a>
+            Don&apos;t have an account?
+            <Link to="/SignUp">Sign up</Link>
           </p>
         </div>
       </motion.div>

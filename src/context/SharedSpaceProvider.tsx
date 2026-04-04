@@ -18,6 +18,9 @@ interface SharedSpaceProviderProps {
 export function SharedSpaceProvider({ children }: SharedSpaceProviderProps) {
   const { isAuthenticated } = useAuthContext();
   const socketRef = useRef<Socket | null>(null);
+  const roomIdRef = useRef("");
+  const pendingLeaveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const pendingLeaveRoomIdRef = useRef<string | null>(null);
   const [sharedData, setSharedData] = useState<SharedMessage[]>([]);
   const [connected, setConnected] = useState<boolean>(false);
   const [roomId, setRoomId] = useState<string>("");
@@ -25,9 +28,13 @@ export function SharedSpaceProvider({ children }: SharedSpaceProviderProps) {
   const [roomStatus, setRoomStatus] = useState<string>("");
   const [namespace, setNamespace] = useState<string>("");
   const [characterNumber, setCharacterNumber] = useState<number>(0);
-  const [roomSize, setRoomSize] = useState<number>(0);
+  const [roomSize, setRoomSize] = useState<number | null>(null);
   const [myUser, setmyUser] = useState<string>("");
   const [guest, setGuest] = useState<boolean>(true);
+
+  useEffect(() => {
+    roomIdRef.current = roomId;
+  }, [roomId]);
 
   useEffect(() => {
     let cancelled = false;
@@ -92,15 +99,22 @@ export function SharedSpaceProvider({ children }: SharedSpaceProviderProps) {
         socketRef.current.disconnect();
         socketRef.current = null;
       }
-      setConnected(false);
+      if (pendingLeaveTimeoutRef.current) {
+        clearTimeout(pendingLeaveTimeoutRef.current);
+        pendingLeaveTimeoutRef.current = null;
+        pendingLeaveRoomIdRef.current = null;
+      }
+        setConnected(false);
     };
   }, [isAuthenticated, namespace]);
 
   useEffect(() => {
     if (!connected || !socketRef.current) return;
-    // eslint-disable-next-line react-hooks/set-state-in-effect
+    if (!roomId) return;
     setSharedData([]);
-    if (roomSize !== undefined) {
+    setRoomStatus("");
+    setRoomParagraph("");
+    if (typeof roomSize === "number" && roomSize > 0) {
       socketRef.current.emit("join-room", { roomId, roomSize });
     } else {
       socketRef.current.emit("join-room", { roomId });
@@ -111,9 +125,46 @@ export function SharedSpaceProvider({ children }: SharedSpaceProviderProps) {
     socketRef.current?.emit("send-message", { roomId, typeObject });
   };
 
+  const leaveRoom = (roomIdToLeave?: string) => {
+    const activeRoomId = roomIdToLeave ?? roomIdRef.current;
+    if (!socketRef.current || !activeRoomId) return;
+    socketRef.current.emit("leave-room", { roomId: activeRoomId });
+    setSharedData([]);
+    setRoomStatus("");
+    setRoomParagraph("");
+    if (roomIdRef.current === activeRoomId) {
+      setRoomId("");
+      setRoomSize(null);
+      roomIdRef.current = "";
+    }
+  };
+
+  const scheduleLeaveRoom = (roomIdToLeave?: string) => {
+    const activeRoomId = roomIdToLeave ?? roomIdRef.current;
+    if (!activeRoomId) return;
+    if (pendingLeaveTimeoutRef.current) {
+      clearTimeout(pendingLeaveTimeoutRef.current);
+    }
+    pendingLeaveRoomIdRef.current = activeRoomId;
+    pendingLeaveTimeoutRef.current = setTimeout(() => {
+      leaveRoom(activeRoomId);
+      pendingLeaveTimeoutRef.current = null;
+      pendingLeaveRoomIdRef.current = null;
+    }, 0);
+  };
+
+  const cancelScheduledLeaveRoom = (roomIdToKeep?: string) => {
+    if (!pendingLeaveTimeoutRef.current) return;
+    if (roomIdToKeep && pendingLeaveRoomIdRef.current !== roomIdToKeep) return;
+    clearTimeout(pendingLeaveTimeoutRef.current);
+    pendingLeaveTimeoutRef.current = null;
+    pendingLeaveRoomIdRef.current = null;
+  };
+
   return (
     <SharedSpaceContext.Provider value={{
-      sharedData, sendSharedData, connected, roomId, setRoomId,
+      sharedData, sendSharedData, leaveRoom, scheduleLeaveRoom, cancelScheduledLeaveRoom,
+      connected, roomId, setRoomId,
       roomParagraph, roomStatus, namespace, setNamespace, characterNumber,
       setRoomSize, roomSize, myUser, guest,
     }}>

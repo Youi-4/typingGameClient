@@ -1,23 +1,29 @@
 # Typing Game Client
 
-This is a web application that has CRUD operations for user accoounts and allows players to be put in a game where they can compete with other players to see who can type the fastest.
+React frontend for the multiplayer typing game. It includes authentication flows, room creation and joining, live race updates, stats, and leaderboard views.
 
-To view the online frontend working, please visit: https://typing-game-client-pi.vercel.app
-## Features
-- CRUD operations
-- JWT authorization
+## Stack
 
-## Tech Stack
-- Node.js
 - React
+- TypeScript
+- Vite
+- React Query
+- Socket.IO client
 
-## How to Run server at: https://github.com/Youi-4/typingGameServer
-1. Clone this repo 
-2. Run npm install
-3. Create .env file with values corresponding with your Postgresql database
-4. Run "npm run dev"
+## Setup
 
-## How to Run Client at: https://github.com/Youi-4/typingGameSClient
-1. Clone this repo 
-2. Run npm install
-4. Run "npm run dev"
+1. Install dependencies with `npm install`.
+2. Copy `.env.example` to `.env`.
+3. Set `VITE_API_URL` and `VITE_SOCKET_URL` for your backend.
+4. Start the app with `npm run dev`.
+
+## Scripts
+
+- `npm run dev` starts the Vite dev server.
+- `npm run build` creates a production build.
+- `npm run test:e2e` runs the Playwright end-to-end suite.
+
+## Notes
+
+- Keep real API URLs, tokens, and secrets out of commits, docs, and screenshots.
+- The backend project lives separately and must be running for local multiplayer.

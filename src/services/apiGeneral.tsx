@@ -1,35 +1,43 @@
 import apiClient from "./apiClient";
-import type { AccountStats } from "../types/sharedInterfaces";
-export async function createRoom(roomType?:string): Promise<string> {
-  const response = await apiClient.get("/create-room",{params: roomType?{roomType}:undefined});
-  return roomType === "private" ? response.data.privateSharedRoomId : response.data.publicSharedRoomId;
+import type {
+  CreateRoomResponseDto,
+  LeaderboardEntryDto,
+  LeaderboardResponseDto,
+  StatsDto,
+  StatsResponseDto,
+} from "../types/api";
+
+export async function createRoom(roomType?: string): Promise<string> {
+  const response = await apiClient.get<CreateRoomResponseDto>(
+    "/create-room",
+    { params: roomType ? { roomType } : undefined }
+  );
+  return response.data.roomId;
 }
 
-export async function updateStats(wpm:number,won:boolean): Promise<AccountStats> {
-  const response = await apiClient.post("/user/profile/updateStats", {wpm:wpm,won: won });
-  return response.data.message
+export async function updateStats(wpm: number, won: boolean): Promise<StatsDto> {
+  const response = await apiClient.post<StatsResponseDto>(
+    "/user/profile/updateStats",
+    { wpm, won }
+  );
+  return response.data.stats;
 }
 
-export async function getStats(): Promise<AccountStats> {
-  const response = await apiClient.post("/user/profile/getStats", {});
-  return response.data.message;
+export async function getStats(): Promise<StatsDto> {
+  const response = await apiClient.post<StatsResponseDto>("/user/profile/getStats", {});
+  return response.data.stats;
 }
 
-export async function getStatsByUsername(username: string): Promise<AccountStats> {
-  const response = await apiClient.get("/user/profile/statsByUsername", { params: { username } });
-  return response.data.message;
+export async function getStatsByUsername(username: string): Promise<StatsDto> {
+  const response = await apiClient.get<StatsResponseDto>(
+    "/user/profile/statsByUsername",
+    { params: { username } }
+  );
+  return response.data.stats;
 }
 
-export interface LeaderboardEntry {
-  username: string;
-  race_best: number;
-  race_avg: number;
-  race_won: number;
-  race_completed: number;
-}
-
-export async function getLeaderboard(): Promise<LeaderboardEntry[]> {
-  const response = await apiClient.get("/user/profile/leaderboard");
-  return response.data.message;
+export async function getLeaderboard(): Promise<LeaderboardEntryDto[]> {
+  const response = await apiClient.get<LeaderboardResponseDto>("/user/profile/leaderboard");
+  return response.data.leaderboard;
 }
 

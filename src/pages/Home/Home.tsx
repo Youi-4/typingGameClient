@@ -5,7 +5,6 @@ import { createRoom } from "../../services/apiGeneral";
 import { useSharedSpace } from "../../context/useSharedSpace"
 
 function Home() {
-  
   const { setNamespace, setRoomId, setRoomSize } = useSharedSpace();
   const navigate = useNavigate();
   const [roomInput, setRoomInput] = useState<string>("");
@@ -13,14 +12,19 @@ function Home() {
   const [roomSizeInput, setRoomSizeInput] = useState<number>(1);
   const [generatedRoom, setGeneratedRoom] = useState<string>("");
   const hasCreated = useRef(false);
+
+  const generatePrivateRoom = async () => {
+    const roomId = await createRoom("private");
+    setGeneratedRoom(roomId);
+    return roomId;
+  };
+
   useEffect(() => {
     if (hasCreated.current) return;
     hasCreated.current = true;
     const generateRoom = async () => {
       try {
-        const roomId = await createRoom("private");
-        console.log("API response roomId:", roomId);
-        setGeneratedRoom(roomId);
+        await generatePrivateRoom();
       } catch (err) {
         console.error("createRoom failed:", err);
       }
@@ -29,11 +33,12 @@ function Home() {
   }, []);
 
   const createLobby = async () => {
+    const roomId = generatedRoom || await generatePrivateRoom();
     setNamespace("/private_game");
-    setRoomId(generatedRoom);
     setRoomSize(roomSizeInput);
+    setRoomId(roomId);
     setJoiningGame(true);
-    navigate(`/Play/${generatedRoom}`);
+    navigate(`/Play/${roomId}`);
   };
 
   const joinLobby = async (event: React.FormEvent<HTMLFormElement>) => {
@@ -42,7 +47,7 @@ function Home() {
     const trimmed = roomInput.trim();
     if (!trimmed) return;
     setJoiningGame(true);
-    await createRoom(trimmed);
+    setRoomSize(null);
     setRoomId(trimmed);
     setNamespace("/private_game");
     navigate(`/Play/${trimmed}`);
@@ -50,6 +55,7 @@ function Home() {
   const onlineLobby = async () => {
     setJoiningGame(true);
     const roomId = await createRoom("public");
+    setRoomSize(null);
     setNamespace("/public_game");
     setRoomId(roomId);
     navigate(`/Play/${roomId}`);

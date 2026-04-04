@@ -1,4 +1,5 @@
 import { createContext } from "react";
+import type { AuthUserDto, LoginRequestDto } from "../types/api";
 
 export interface AuthContextType {
   isAuthenticated: boolean;
@@ -11,15 +12,7 @@ export interface AuthContextType {
   authErrorMessage: string;
 }
 
-export interface User {
-  id: string;
-  email: string;
-  userName?: string;
-}
-
-export interface LoginValues {
-  userName_or_email: string;
-  password: string;
-}
+export type User = AuthUserDto;
+export type LoginValues = LoginRequestDto;
 
 export const AuthContext = createContext<AuthContextType | undefined>(undefined);

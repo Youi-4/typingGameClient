@@ -1,430 +1,214 @@
-// SpeedTypingGame.tsx
-import React, {
-    useState,
-    useEffect,
-    useRef,
-    useMemo,
-    type ChangeEvent,
-    type KeyboardEvent
-} from 'react';
-import './styles.css';
-import TypingArea from './components/TypingArea';
-import WpmGraph from './components/WpmGraph';
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { useSharedSpace } from './context/useSharedSpace';
-import type { AccountStats } from './types/sharedInterfaces';
-import { updateStats, getStatsByUsername, createRoom } from './services/apiGeneral';
-const imgArrWalk = ["/walk_0.png", "/walk_1.png", "/walk_2.png", "/walk_3.png", "/walk_4.png", "/walk_5.png", "/walk_6.png", "/walk_7.png", "/walk_8.png", "/walk_9.png"];
-const imgArrRun = ["/run_0.png", "/run_1.png", "/run_2.png", "/run_3.png", "/run_4.png", "/run_5.png", "/run_6.png", "/run_7.png", "/run_8.png", "/run_9.png"];
-const idleImg = "/Idle_0.png";
-const SpeedTypingGame: React.FC = () => {
-    // const { roomId: roomIdParam } = useParams();
-    // console.log(roomIdParam,"$$$$$$$$");
-    // if(roomIdParam === undefined){
-    // }
-    const navigate = useNavigate();
-    const {
-        sharedData,
-        sendSharedData,
-        roomId,
-        setRoomId,
-        roomParagraph,
-        roomStatus,
-        roomSize,
-        namespace,
-        setNamespace,
-        setRoomSize,
-        myUser,
-        guest,
-    } = useSharedSpace();
-    // console.log("characterNumbercharacterNumbercharacterNumber:",characterNumber)
 
-    const [localImgCounts, setLocalImgCounts] = useState<Record<string, number>>({});
-    const paragraphMeanRef = useRef(0);
-    const [typingText, setTypingText] = useState<React.JSX.Element[] | string>([]);
-    const [inpFieldValue, setInpFieldValue] = useState<string>('');
-    const maxTime: number = 90;
-    const [timeLeft, setTimeLeft] = useState<number>(maxTime);
-    const [charIndex, setCharIndex] = useState<number>(0);
-    const [mistakes, setMistakes] = useState<number>(0);
-    const [totalMistakes, setTotalMistakes] = useState<number>(0);
-    const [isTyping, setIsTyping] = useState<boolean>(false);
-    const [WPM, setWPM] = useState<number>(0);
-    const [isDisabled, setIsDisabled] = useState(true);
-    const trackRefs = useRef<Record<string, HTMLDivElement | null>>({});
-    const preloadedImgs = useRef<HTMLImageElement[]>([]);
-    const [assignedRanks, setAssignedRanks] = useState<Record<string, string>>({});
-    const [settledSenders, setSettledSenders] = useState<Set<string>>(new Set());
-    const completionTimeouts = useRef<Set<string>>(new Set());
-    const [charIndexBeforeMistake, setCharIndexBeforeMistake] = useState<number>(0);
-    const [isActivelyTyping, setIsActivelyTyping] = useState(false);
-    const [isCompleted, setIsCompleted] = useState(false);
-    const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-    const gameStartTimeRef = useRef<number | null>(null);
-    const typeDataRef = useRef({ totalMistakes: 0, WPM: 0, charIndex: 0, charIndexBeforeMistake: 0, mistakes: 0, isActivelyTyping: false, isCompleted: false });
-    const wpmHistoryRef = useRef<{ elapsed: number; wpm: number }[]>([]);
-    const [wpmHistory, setWpmHistory] = useState<{ elapsed: number; wpm: number }[]>([]);
-    const [showGraph, setShowGraph] = useState(false);
-    const [hoveredPlayer, setHoveredPlayer] = useState<string | null>(null);
-    const [playerStatsCache, setPlayerStatsCache] = useState<Record<string, AccountStats>>({});
-    const charactersRef = useRef<HTMLCollectionOf<HTMLElement>>(document.getElementsByClassName('char') as HTMLCollectionOf<HTMLElement>);
-    useEffect(() => {
-        const inputField = document.getElementById('game-input-field') as HTMLInputElement;
-        const focusInput = () => inputField?.focus();
-        document.addEventListener("keydown", focusInput);
-        return () => document.removeEventListener("keydown", focusInput);
-    }, []);
+import "./styles.css";
+import { useSharedSpace } from "./context/useSharedSpace";
+import { createRoom, getStatsByUsername, updateStats } from "./services/apiGeneral";
+import { CountdownBanner } from "./features/typing-game/CountdownBanner";
+import { RaceTrack } from "./features/typing-game/RaceTrack";
+import { ResultsPanel } from "./features/typing-game/ResultsPanel";
+import { useRoomLifecycle } from "./features/typing-game/useRoomLifecycle";
+import { useTypingRace } from "./features/typing-game/useTypingRace";
+import type { StatsDto } from "./types/api";
 
-    const latestBySender = useMemo(() => sharedData.reduce<Record<string, (typeof sharedData)[number]>>(
-        (acc, item) => {
-            const key = item.senderId || "unknown";
-            acc[key] = item;
-            return acc;
-        },
-        {}
-    ), [sharedData]);
+function SpeedTypingGame() {
+  const navigate = useNavigate();
+  const {
+    sharedData,
+    sendSharedData,
+    scheduleLeaveRoom,
+    cancelScheduledLeaveRoom,
+    roomId,
+    setRoomId,
+    roomParagraph,
+    roomStatus,
+    roomSize,
+    namespace,
+    setNamespace,
+    setRoomSize,
+    myUser,
+    guest,
+  } = useSharedSpace();
 
-    useEffect(() => {
-        if (roomParagraph) {
-            sendSharedData({ totalMistakes, WPM, charIndex, charIndexBeforeMistake, mistakes, isActivelyTyping, isCompleted });
-        }
-    }, [roomParagraph]);
+  const [localImgCounts, setLocalImgCounts] = useState<Record<string, number>>({});
+  const [assignedRanks, setAssignedRanks] = useState<Record<string, string>>({});
+  const [settledSenders, setSettledSenders] = useState<Set<string>>(new Set());
+  const [playerStatsCache, setPlayerStatsCache] = useState<Record<string, StatsDto>>({});
+  const completionSubmittedRef = useRef(false);
+  const completedPlayersRef = useRef<Set<string>>(new Set());
+  const settleTimeoutsRef = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map());
+  const rankPoolRef = useRef(["/6th.png", "/5th.png", "/4th.png", "/3rd.png", "/2nd.png", "/1st.png"]);
 
+  const latestBySender = useMemo(
+    () => sharedData.reduce<Record<string, (typeof sharedData)[number]>>(
+      (accumulator, item) => {
+        const senderKey = item.senderId || "unknown";
+        accumulator[senderKey] = item;
+        return accumulator;
+      },
+      {}
+    ),
+    [sharedData]
+  );
 
-    useEffect(() => {
-        if (!isCompleted) return;
-        sendSharedData({ totalMistakes, WPM, charIndex, charIndexBeforeMistake, mistakes: 0, isActivelyTyping: false, isCompleted });
-        setWpmHistory([...wpmHistoryRef.current]);
-        setShowGraph(true);
-        const hasOtherPlayers = Object.keys(latestBySender).some(id => id !== myUser);
-        console.log("hasotherP",hasOtherPlayers);
-        const won = hasOtherPlayers && !Object.entries(latestBySender).some(
-            ([senderId, item]) => senderId !== myUser && item.typeObject.isCompleted
-        );
-        if (hasOtherPlayers && !guest) {
-            updateStats(WPM, won)
-                .then(() => setPlayerStatsCache(prev => { const next = { ...prev }; delete next[myUser]; return next; }))
-                .catch(console.error);
-        }
-    }, [isCompleted]);
+  const playerEntries = useMemo(
+    () => Object.entries(latestBySender),
+    [latestBySender]
+  );
 
-    useEffect(() => {
-        const allImgs = [...imgArrWalk, ...imgArrRun, idleImg];
-        preloadedImgs.current = [0, 1, 2, 3, 4].flatMap(charNum =>
-            allImgs.map(src => {
-                const img = new Image();
-                img.src = `/Character${charNum}${src}`;
-                return img;
-            })
-        );
-    }, []);
+  const { countdownMessage, isInputDisabled } = useRoomLifecycle({
+    roomId,
+    roomSize,
+    roomStatus,
+    scheduleLeaveRoom,
+    cancelScheduledLeaveRoom,
+  });
 
+  const typingRace = useTypingRace({
+    roomParagraph,
+    isInputDisabled,
+    sendSharedData,
+  });
 
-    const [step, setStep] = useState(0);
-    const [stepMultiplayer, setStepMultiplayer] = useState(0);
-    const loadingDots = ["", ".", "..", "..."];
-
-    const IntroCountDown = [(roomSize == 1) ? "" : "Waiting for Players to join.", "The Race begins in", "🔴🔴3🔴🔴", "🔴🔴2🔴🔴", "🟡🟡1🟡🟡", "🟢🟢Go!🟢🟢"];
-    const rankPool = useRef(["/6th.png", "/5th.png", "/4th.png", "/3rd.png", "/2nd.png", "/1st.png"]);
-    useEffect(() => {
-
-        if (step == IntroCountDown.length) {
-            setIsDisabled(false); // eslint-disable-line react-hooks/set-state-in-effect -- intentional: enable input after countdown
-        }
-        else if (roomStatus === "filled" && step < IntroCountDown.length) {
-            const timer = setTimeout(() => {
-                setStep(step + 1);
-            }, (step === 1) ? 2000 : 1000);
-
-            return () => clearTimeout(timer);
-        }
-
-    }, [step, roomStatus]);
-    useEffect(() => {
-        if (roomStatus !== "filled") {
-            const timer = setTimeout(() => {
-                setStepMultiplayer(stepMultiplayer + 1);
-            }, 1000);
-            return () => clearTimeout(timer);
-        } else {
-            setStepMultiplayer(0) // eslint-disable-line react-hooks/set-state-in-effect -- intentional: reset on room filled
-        }
-    }, [stepMultiplayer, roomStatus]);
-    const loadParagraph = (senten: string): void => {
-        const num: number = senten.split(' ').length + 1;
-        paragraphMeanRef.current = (senten.length - num) / num;
-
-        const content = Array.from(senten).map((letter, index) => (
-            <span
-                key={index}
-                className={`char ${index === 0 ? 'active' : ''}${letter === ' ' ? ' char-space' : ''}`}
-            >
-                {letter}
-            </span>
-        ));
-
-        setTypingText(content);
-        setInpFieldValue('');
-        setCharIndex(0);
-        setMistakes(0);
-        setTotalMistakes(0);
-        setIsTyping(false);
-    };
-
-    const handleKeyDown = (event: KeyboardEvent<HTMLInputElement>): void => {
-        const characters = charactersRef.current;
-        if (event.key === 'Backspace' && charIndex > 0 && charIndex <= characters.length && timeLeft > 0 && (characters[charIndex - 1].textContent != " " || mistakes > 0) && (charIndex <= roomParagraph.length && mistakes > 0)) {
-
-            if (characters[charIndex - 1].classList.contains('correct')) {
-                characters[charIndex - 1].classList.remove('correct');
-            }
-            if (characters[charIndex - 1].classList.contains('wrong')) {
-                characters[charIndex - 1].classList.remove('wrong');
-                setMistakes(prev => prev - 1);
-            }
-
-            characters[charIndex]?.classList.remove('active');
-            characters[charIndex - 1].classList.add('active');
-            setCharIndex(prev => prev - 1);
-
-        }
+  useEffect(() => {
+    if (!typingRace.isCompleted || completionSubmittedRef.current) {
+      return;
     }
 
-    const initTyping = (event: ChangeEvent<HTMLInputElement>): void => {
-        const characters = charactersRef.current;
-        // Get only the last character typed
-        const typedChar = event.target.value.slice(-1);
-        // console.log(typedChar)
-        if (charIndex < characters.length && timeLeft > 0) {
-            const currentChar = characters[charIndex].innerText;
-
-            if (!isTyping) setIsTyping(true);
-
-            let currentMistakes = mistakes;
-            if (typedChar === currentChar) {
-                characters[charIndex].classList.add('correct');
-            } else {
-                if (mistakes == 0) { setCharIndexBeforeMistake(charIndex); }
-                setMistakes(prev => prev + 1);
-                currentMistakes++;
-                setTotalMistakes(prev => prev + 1);
-                characters[charIndex].classList.add('wrong');
-            }
-
-            characters[charIndex].classList.remove('active');
-            setCharIndex(prev => prev + 1);
-
-            if (charIndex + 1 < characters.length) {
-                characters[charIndex + 1].classList.add('active');
-            } else {
-                setIsTyping(false);
-                if (currentMistakes == 0 && charIndex + 1 >= roomParagraph.length) {
-                    setIsCompleted(true);
-                }
-            }
-            setIsActivelyTyping(true);
-            if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
-            typingTimeoutRef.current = setTimeout(() => {
-                setIsActivelyTyping(false);
-            }, 500);
-        } else {
-            setIsTyping(false);
-        }
-    };
-
-    const playAgain = async (): Promise<void> => {
-        const isPublic = namespace === "/public_game";
-        const newRoomId = await createRoom(isPublic ? "public" : "private");
-        setNamespace(namespace);
-        setRoomSize(roomSize);
-        setRoomId(newRoomId);
-        navigate(`/Play/${newRoomId}`);
-    };
-
-    useEffect(() => {
-        setRoomId(roomId);
-    }, [roomId]);
-
-
-    useEffect(() => {
-        if (roomParagraph === null) return;
-        loadParagraph(roomParagraph); // eslint-disable-line react-hooks/set-state-in-effect -- intentional: parse paragraph into styled spans when received
-    }, [roomParagraph]);
-
-
-    // Keep ref in sync every render so the data interval always sends fresh values
-    useEffect(() => {
-        typeDataRef.current = { totalMistakes, WPM, charIndex, charIndexBeforeMistake, mistakes, isActivelyTyping, isCompleted };
-    });
-
-    useEffect(() => {
-        if (isCompleted || isDisabled) return;
-        const dataInterval = setInterval(() => {
-            sendSharedData(typeDataRef.current);
-        }, 100);
-        return () => clearInterval(dataInterval);
-    }, [isDisabled, isCompleted]);
-
-    // Timer uses wall-clock so event loop pressure from typing can't cause drift
-    useEffect(() => {
-        if (isDisabled || isCompleted) return;
-        if (!gameStartTimeRef.current) gameStartTimeRef.current = Date.now();
-        const timerInterval = setInterval(() => {
-            const elapsed = Math.floor((Date.now() - gameStartTimeRef.current!) / 1000);
-            const remaining = Math.max(0, maxTime - elapsed);
-            setTimeLeft(remaining);
-            if (elapsed > 0 && paragraphMeanRef.current > 0) {
-                const { charIndex, mistakes } = typeDataRef.current;
-                const wpm = Math.round(((charIndex - mistakes) / paragraphMeanRef.current) / elapsed * 60);
-                const sanitized = wpm < 0 || !wpm || wpm === Infinity ? 0 : wpm;
-                setWPM(sanitized);
-                wpmHistoryRef.current.push({ elapsed, wpm: sanitized });
-            }
-            if (remaining <= 0) clearInterval(timerInterval);
-        }, 1000);
-        return () => clearInterval(timerInterval);
-    }, [isDisabled, isCompleted]);
-
-
-    useEffect(() => {
-        const senderIds = Object.keys(latestBySender);
-
-        if (senderIds.length === 0) return;
-        const interval = setInterval(() => {
-            setLocalImgCounts(prev => {
-                const next = { ...prev };
-                senderIds.forEach(id => { next[id] = ((next[id] ?? 0) + 1) % 10; });
-                return next;
-            });
-        }, 500);
-        return () => clearInterval(interval);
-    }, [Object.keys(latestBySender).sort().join(',')]);
-
-    useEffect(() => {
-        Object.entries(latestBySender).forEach(([senderId, item]) => {
-            if (item.typeObject.isCompleted && !completionTimeouts.current.has(senderId)) {
-                completionTimeouts.current.add(senderId);
-                if (!assignedRanks[senderId] && item.typeObject.mistakes === 0) {
-                    const rank = rankPool.current.pop() ?? "/1st.png";
-                    setAssignedRanks(prev => ({ ...prev, [senderId]: rank }));
-                }
-                setTimeout(() => {
-                    setSettledSenders(prev => new Set(prev).add(senderId));
-                }, 800);
-            }
-        });
-    }, [sharedData]);
-    return (
-        <>
-            <div className="container">
-
-                <div className='lobby-form'>
-
-                    <div >{step < IntroCountDown.length && (
-                        <h2 key={step} className="animate">
-                            {(roomSize == 1) ? IntroCountDown[step] : IntroCountDown[step] + loadingDots[stepMultiplayer % loadingDots.length]}
-                        </h2>
-
-                    )}</div>
-
-                    {Object.entries(latestBySender).map(([senderId, item]) => (
-
-                        <div key={senderId} className="play-panel">
-
-                            <div className="play-items" style={{ position: "relative" }}>
-
-                                <div className='play-item'><b>{(senderId == myUser && roomSize != 1) ? item.senderName + " (You)" : item.senderName}</b></div>
-                                <div className='play-item'>
-                                    <div><b>mistakes:{item.typeObject?.totalMistakes ?? 0} </b></div>
-                                    <div > <b>WPM:{item.typeObject?.WPM ?? 0}</b></div>
-
-                                </div>
-                                <div style={{ flex: 1, position: "relative" }}
-                                    onMouseEnter={() => {
-                                        setHoveredPlayer(senderId);
-                                        if (!playerStatsCache[senderId]) {
-                                            getStatsByUsername(item.senderName)
-                                                .then(stats => setPlayerStatsCache(prev => ({ ...prev, [senderId]: stats })))
-                                                .catch(() => {});
-                                        }
-                                    }}
-                                    onMouseLeave={() => setHoveredPlayer(null)}
-                                >
-                                    <div ref={(el: HTMLDivElement | null) => {
-                                        trackRefs.current[senderId] = el;
-                                    }} className="race-track">
-                                        <img
-                                            src={(!item.typeObject.isCompleted) ? (item.typeObject.isActivelyTyping && !(item.typeObject.mistakes > 0)) ? ((item.typeObject.WPM > 45) ? `/Character${item.characterNumber}` + imgArrRun[localImgCounts[senderId] ?? 0] : `/Character${item.characterNumber}` + imgArrWalk[localImgCounts[senderId] ?? 0]) : `/Character${item.characterNumber}` + idleImg : (item.typeObject.mistakes == 0) ? (assignedRanks[senderId] ?? "/1st.png") : `/Character${item.characterNumber}` + idleImg}
-                                            className={(item.typeObject.isCompleted) ? "rank-img" : "character-img"}
-                                            alt="moving"
-                                            style={{
-                                                left: `${(
-                                                    (item.typeObject.isCompleted && settledSenders.has(senderId)) ? 5 :
-                                                        item.typeObject.mistakes > 0
-                                                            ? (item.typeObject.charIndexBeforeMistake)
-                                                            : (item.typeObject.charIndex)
-                                                ) / (roomParagraph?.length ?? 1) * 100 + 1}%`,
-                                                transition: "left 0.2s ease-out"
-                                            }}
-                                        />
-                                    </div>
-                                    {hoveredPlayer === senderId && (() => {
-                                        const stats = playerStatsCache[senderId];
-                                        if (!stats) return null;
-                                        return (
-                                            <table className="player-tooltip" style={{
-                                                left: `${(
-                                                    (item.typeObject.isCompleted && settledSenders.has(senderId)) ? 5 :
-                                                        item.typeObject.mistakes > 0
-                                                            ? item.typeObject.charIndexBeforeMistake
-                                                            : item.typeObject.charIndex
-                                                ) / (roomParagraph?.length ?? 1) * 100 + 1}%`,
-                                            }}>
-                                                <tbody>
-                                                    <tr><td>Avg WPM</td><td>{Math.round(stats.race_avg)}</td></tr>
-                                                    <tr><td>Best WPM</td><td>{stats.race_best}</td></tr>
-                                                    <tr><td>Last WPM</td><td>{stats.race_last}</td></tr>
-                                                    <tr><td>Races Won</td><td>{stats.race_won}</td></tr>
-                                                    <tr><td>Races Completed</td><td>{stats.race_completed}</td></tr>
-                                                </tbody>
-                                            </table>
-                                        );
-                                    })()}
-                                </div>
-                            </div>
-                        </div>
-                    ))}
-
-                </div>
-                <input
-                    type="text"
-                    className="input-field"
-                    id="game-input-field"
-                    value={inpFieldValue}
-                    onChange={initTyping}
-                    onKeyDown={handleKeyDown}
-                    disabled={isDisabled}
-                />
-                <TypingArea
-                    typingText={typingText}
-                    timeLeft={timeLeft}
-                    totalMistakes={totalMistakes}
-                    WPM={WPM}
-                    isFinished={isCompleted || timeLeft === 0}
-                    onPlayAgain={playAgain}
-                />
-
-                {showGraph && (
-                    <WpmGraph
-                        data={wpmHistory}
-                        finalWpm={WPM}
-                        accuracy={Math.round((roomParagraph.length / (roomParagraph.length + totalMistakes)) * 10000) / 100}
-                    />
-                )}
-
-            </div>
-        </>
+    completionSubmittedRef.current = true;
+    const hasOtherPlayers = playerEntries.some(([senderId]) => senderId !== myUser);
+    const won = hasOtherPlayers && !playerEntries.some(
+      ([senderId, item]) => senderId !== myUser && item.typeObject.isCompleted
     );
-};
+
+    if (!hasOtherPlayers || guest) {
+      return;
+    }
+
+    updateStats(typingRace.wpm, won)
+      .then(() => {
+        setPlayerStatsCache((current) => {
+          const next = { ...current };
+          delete next[myUser];
+          return next;
+        });
+      })
+      .catch(console.error);
+  }, [guest, myUser, playerEntries, typingRace.isCompleted, typingRace.wpm]);
+
+  const playerIdsKey = playerEntries.map(([senderId]) => senderId).sort().join(",");
+  useEffect(() => {
+    if (playerEntries.length === 0) {
+      return;
+    }
+
+    const interval = setInterval(() => {
+      setLocalImgCounts((current) => {
+        const next = { ...current };
+        for (const [senderId] of playerEntries) {
+          next[senderId] = ((next[senderId] ?? 0) + 1) % 10;
+        }
+        return next;
+      });
+    }, 500);
+
+    return () => clearInterval(interval);
+  }, [playerEntries, playerIdsKey]);
+
+  useEffect(() => {
+    for (const [senderId, item] of playerEntries) {
+      if (!item.typeObject.isCompleted || completedPlayersRef.current.has(senderId)) {
+        continue;
+      }
+
+      completedPlayersRef.current.add(senderId);
+      if (!assignedRanks[senderId] && item.typeObject.mistakes === 0) {
+        const rank = rankPoolRef.current.pop() ?? "/1st.png";
+        setAssignedRanks((current) => ({ ...current, [senderId]: rank }));
+      }
+
+      const timeoutId = setTimeout(() => {
+        setSettledSenders((current) => {
+          const next = new Set(current);
+          next.add(senderId);
+          return next;
+        });
+      }, 800);
+      settleTimeoutsRef.current.set(senderId, timeoutId);
+    }
+  }, [assignedRanks, playerEntries]);
+
+  useEffect(() => {
+    return () => {
+      for (const timeoutId of settleTimeoutsRef.current.values()) {
+        clearTimeout(timeoutId);
+      }
+      settleTimeoutsRef.current.clear();
+    };
+  }, []);
+
+  const loadPlayerStats = (senderId: string, senderName: string) => {
+    if (playerStatsCache[senderId]) {
+      return;
+    }
+
+    getStatsByUsername(senderName)
+      .then((stats) => {
+        setPlayerStatsCache((current) => ({ ...current, [senderId]: stats }));
+      })
+      .catch(() => {});
+  };
+
+  const playAgain = async (): Promise<void> => {
+    const isPublicGame = namespace === "/public_game";
+    const nextRoomId = await createRoom(isPublicGame ? "public" : "private");
+    setNamespace(namespace);
+    setRoomSize(isPublicGame ? null : roomSize);
+    setRoomId(nextRoomId);
+    navigate(`/Play/${nextRoomId}`);
+  };
+
+  return (
+    <div className="container">
+      <div className="lobby-form">
+        <CountdownBanner message={countdownMessage} />
+
+        <RaceTrack
+          players={playerEntries}
+          myUser={myUser}
+          roomParagraphLength={roomParagraph.length}
+          roomSize={roomSize}
+          localImgCounts={localImgCounts}
+          playerStatsCache={playerStatsCache}
+          assignedRanks={assignedRanks}
+          settledSenders={settledSenders}
+          loadPlayerStats={loadPlayerStats}
+        />
+      </div>
+
+      <input
+        type="text"
+        className="input-field"
+        id="game-input-field"
+        value={typingRace.inputValue}
+        onChange={typingRace.handleInputChange}
+        onKeyDown={typingRace.handleKeyDown}
+        disabled={isInputDisabled}
+      />
+
+      <ResultsPanel
+        typingText={typingRace.typingText}
+        timeLeft={typingRace.timeLeft}
+        totalMistakes={typingRace.totalMistakes}
+        wpm={typingRace.wpm}
+        isFinished={typingRace.isCompleted || typingRace.timeLeft === 0}
+        onPlayAgain={playAgain}
+        showGraph={typingRace.showGraph}
+        graphData={typingRace.wpmHistory}
+        accuracy={typingRace.accuracy}
+      />
+    </div>
+  );
+}
 
 export default SpeedTypingGame;

@@ -1,35 +1,30 @@
 import apiClient from "./apiClient";
 import { AxiosError } from "axios";
-/** ---- Types ---- */
-import type { AuthUser ,LoginValues} from "../types/sharedInterfaces";
-// Login form values
-
-
-/** ---- API calls ---- */
-
-// API call for logging in
+import type {
+  LoggedInUserResponseDto,
+  LoginRequestDto,
+  LoginResponseDto,
+} from "../types/api";
 
 
 export const loginUser = async (
-  values: LoginValues
-): Promise<LoginValues> => {
-  const response = await apiClient.post<LoginValues>(
+  values: LoginRequestDto
+): Promise<LoginResponseDto> => {
+  const response = await apiClient.post<LoginResponseDto>(
     "/user/login",
     values
   );
-  console.log("loginUser response:", response);
   return response.data;
 };
 
 // Get currently logged-in user
-export const getLoggedinUser = async (): Promise<AuthUser> => {
+export const getLoggedinUser = async () => {
   try {
-    const response = await apiClient.get<AuthUser>(
+    const response = await apiClient.get<LoggedInUserResponseDto>(
       "/auth/get-loggedin-user"
     );
-    return response.data;
+    return response.data.user;
   } catch (error) {
-    console.log("error fetching user:", error);
     throw error as AxiosError;
   }
 };
@@ -40,10 +35,8 @@ export const logoutUser = async (): Promise<{ success: boolean }> => {
     const response = await apiClient.post<{ success: boolean }>(
       "/auth/logout"
     );
-    console.log("logoutUser response:", response.data);
     return response.data;
   } catch (error) {
-    console.log("logoutUser error:", error);
     throw error as AxiosError;
   }
 };
