@@ -1,4 +1,4 @@
-import { createBrowserRouter } from "react-router-dom";
+import { createBrowserRouter, useParams } from "react-router-dom";
 import Home from "./pages/Home/Home"
 import Login from "./pages/Login/Login"
 import NotFound from "./pages/Not_Found/NotFound"
@@ -8,6 +8,13 @@ import { Navigate } from "react-router-dom";
 import PrivateRoute from "./utils/PrivateRoute.jsx";
 import PublicRoute from "./utils/PublicRoute.jsx";
 import RootLayout from "./RootLayout";
+
+function TypingGameKeyed() {
+  const { roomId } = useParams();
+  return <TypingGame key={roomId} />;
+}
+import Stats from "./pages/Stats/Stats";
+import Leaderboard from "./pages/Leaderboard/Leaderboard";
 
 const router = createBrowserRouter([
   {
@@ -29,7 +36,9 @@ const router = createBrowserRouter([
       },
 
       { path: "/Home", element: <Home /> },
-      { path: "/Play/:roomId", element: <TypingGame /> },
+      { path: "/Stats", element: <Stats /> },
+      { path: "/Leaderboard", element: <Leaderboard /> },
+      { path: "/Play/:roomId", element: <TypingGameKeyed /> },
       {
         path: "*",
         element: (<PrivateRoute><NotFound /></PrivateRoute>),

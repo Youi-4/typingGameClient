@@ -1,0 +1,201 @@
+.stats-page {
+  min-height: 100vh;
+  background-color: var(--bg-page);
+  padding: 96px 24px 48px;
+  box-sizing: border-box;
+  font-family: system-ui, sans-serif;
+  text-align: left;
+  transition: background-color 0.2s;
+}
+
+.stats-container {
+  max-width: 860px;
+  margin: 0 auto;
+}
+
+.stats-heading {
+  font-size: 28px;
+  font-weight: 800;
+  color: var(--text-primary);
+  margin: 0 0 6px;
+  letter-spacing: -0.03em;
+}
+
+.stats-subheading {
+  font-size: 14px;
+  color: var(--text-muted);
+  margin: 0 0 32px;
+}
+
+.stats-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 16px;
+  margin-bottom: 32px;
+}
+
+.stat-card {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-color);
+  border-radius: 14px;
+  padding: 20px 18px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+  transition: background-color 0.2s, border-color 0.2s;
+}
+
+.stat-card-label {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-subtle);
+  margin: 0 0 6px;
+}
+
+.stat-card-value {
+  font-size: 32px;
+  font-weight: 800;
+  color: var(--accent);
+  margin: 0;
+  line-height: 1;
+  font-family: 'Noto Sans Mono', monospace;
+}
+
+.stat-card-unit {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-subtle);
+  margin-left: 3px;
+}
+
+.stat-card-value.green  { color: #28a745; }
+.stat-card-value.orange { color: #e67e22; }
+.stat-card-value.purple { color: #6f42c1; }
+
+.winrate-section {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-color);
+  border-radius: 14px;
+  padding: 24px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+  margin-bottom: 32px;
+  transition: background-color 0.2s, border-color 0.2s;
+}
+
+.winrate-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 12px;
+}
+
+.winrate-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.winrate-pct {
+  font-size: 22px;
+  font-weight: 800;
+  color: #28a745;
+  font-family: 'Noto Sans Mono', monospace;
+}
+
+.winrate-bar-track {
+  width: 100%;
+  height: 12px;
+  background: var(--border-color);
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.winrate-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #28a745, #85e89d);
+  border-radius: 999px;
+  transition: width 0.6s ease;
+}
+
+.winrate-counts {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 8px;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.wpm-section {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-color);
+  border-radius: 14px;
+  padding: 24px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+  transition: background-color 0.2s, border-color 0.2s;
+}
+
+.wpm-section-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0 0 20px;
+}
+
+.wpm-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 16px;
+}
+
+.wpm-row:last-child {
+  margin-bottom: 0;
+}
+
+.wpm-row-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-muted);
+  width: 70px;
+  flex-shrink: 0;
+}
+
+.wpm-row-bar-track {
+  flex: 1;
+  height: 10px;
+  background: var(--border-color);
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.wpm-row-bar-fill {
+  height: 100%;
+  border-radius: 999px;
+  transition: width 0.6s ease;
+}
+
+.wpm-row-bar-fill.best { background: linear-gradient(90deg, #1a73e8, #74b9ff); }
+.wpm-row-bar-fill.avg  { background: linear-gradient(90deg, #6f42c1, #c7a6f7); }
+.wpm-row-bar-fill.last { background: linear-gradient(90deg, #e67e22, #f9ca95); }
+
+.wpm-row-value {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text-primary);
+  font-family: 'Noto Sans Mono', monospace;
+  width: 52px;
+  text-align: right;
+  flex-shrink: 0;
+}
+
+.stats-loading,
+.stats-error,
+.stats-empty {
+  text-align: center;
+  padding: 80px 24px;
+  color: var(--text-muted);
+  font-size: 15px;
+}
+
+.stats-error { color: #d73a49; }

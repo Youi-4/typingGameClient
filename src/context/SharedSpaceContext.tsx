@@ -45,6 +45,4 @@ export interface SharedSpaceContextType {
   guest: boolean;
 }
 
-export const SharedSpaceContext = createContext<SharedSpaceContextType | undefined>(
-  undefined
-);
+export const SharedSpaceContext = createContext<SharedSpaceContextType | undefined>(undefined);

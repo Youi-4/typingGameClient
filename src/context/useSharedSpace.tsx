@@ -5,9 +5,7 @@ import type { SharedSpaceContextType } from "./SharedSpaceContext";
 export function useSharedSpace(): SharedSpaceContextType {
   const context = useContext(SharedSpaceContext);
   if (!context) {
-    throw new Error(
-      "useSharedSpace must be used within a SharedSpaceProvider"
-    );
+    throw new Error("useSharedSpace must be used within a SharedSpaceProvider");
   }
   return context;
 }

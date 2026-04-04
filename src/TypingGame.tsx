@@ -8,12 +8,12 @@ import React, {
     type KeyboardEvent
 } from 'react';
 import './styles.css';
-import TypingArea from './TypingArea';
-import WpmGraph from './WpmGraph';
-// import { useParams } from "react-router-dom";
-import { useSharedSpace } from './services/useSharedSpace';
+import TypingArea from './components/TypingArea';
+import WpmGraph from './components/WpmGraph';
+import { useNavigate } from "react-router-dom";
+import { useSharedSpace } from './context/useSharedSpace';
 import type { AccountStats } from './types/sharedInterfaces';
-import { updateStats, getStatsByUsername } from './services/apiGeneral';
+import { updateStats, getStatsByUsername, createRoom } from './services/apiGeneral';
 const imgArrWalk = ["/walk_0.png", "/walk_1.png", "/walk_2.png", "/walk_3.png", "/walk_4.png", "/walk_5.png", "/walk_6.png", "/walk_7.png", "/walk_8.png", "/walk_9.png"];
 const imgArrRun = ["/run_0.png", "/run_1.png", "/run_2.png", "/run_3.png", "/run_4.png", "/run_5.png", "/run_6.png", "/run_7.png", "/run_8.png", "/run_9.png"];
 const idleImg = "/Idle_0.png";
@@ -22,6 +22,7 @@ const SpeedTypingGame: React.FC = () => {
     // console.log(roomIdParam,"$$$$$$$$");
     // if(roomIdParam === undefined){
     // }
+    const navigate = useNavigate();
     const {
         sharedData,
         sendSharedData,
@@ -30,6 +31,9 @@ const SpeedTypingGame: React.FC = () => {
         roomParagraph,
         roomStatus,
         roomSize,
+        namespace,
+        setNamespace,
+        setRoomSize,
         myUser,
         guest,
     } = useSharedSpace();
@@ -153,8 +157,7 @@ const SpeedTypingGame: React.FC = () => {
         const content = Array.from(senten).map((letter, index) => (
             <span
                 key={index}
-                style={{ color: (letter !== ' ') ? 'black' : 'transparent' }}
-                className={`char ${index === 0 ? 'active' : ''}`}
+                className={`char ${index === 0 ? 'active' : ''}${letter === ' ' ? ' char-space' : ''}`}
             >
                 {letter}
             </span>
@@ -229,24 +232,13 @@ const SpeedTypingGame: React.FC = () => {
         }
     };
 
-    const resetGame = (): void => {
-        Array.from(charactersRef.current).forEach((char) => {
-            char.classList.remove('wrong', 'correct', 'active');
-        });
-        setIsTyping(false);
-        setIsCompleted(false);
-        setTimeLeft(maxTime);
-        setCharIndex(0);
-        setMistakes(0);
-        setTotalMistakes(0);
-        setWPM(0);
-        wpmHistoryRef.current = [];
-        gameStartTimeRef.current = null;
-        setWpmHistory([]);
-        setShowGraph(false);
-        if (roomParagraph === null) return;
-        loadParagraph(roomParagraph);
-
+    const playAgain = async (): Promise<void> => {
+        const isPublic = namespace === "/public_game";
+        const newRoomId = await createRoom(isPublic ? "public" : "private");
+        setNamespace(namespace);
+        setRoomSize(roomSize);
+        setRoomId(newRoomId);
+        navigate(`/Play/${newRoomId}`);
     };
 
     useEffect(() => {
@@ -380,16 +372,13 @@ const SpeedTypingGame: React.FC = () => {
                                         const stats = playerStatsCache[senderId];
                                         if (!stats) return null;
                                         return (
-                                            <table style={{
-                                                position: "absolute",
-                                                bottom: "100%",
+                                            <table className="player-tooltip" style={{
                                                 left: `${(
                                                     (item.typeObject.isCompleted && settledSenders.has(senderId)) ? 5 :
                                                         item.typeObject.mistakes > 0
                                                             ? item.typeObject.charIndexBeforeMistake
                                                             : item.typeObject.charIndex
                                                 ) / (roomParagraph?.length ?? 1) * 100 + 1}%`,
-                                                background: "white", border: "1px solid #ccc", borderRadius: 6, padding: 6, fontSize: 12, zIndex: 10, whiteSpace: "nowrap"
                                             }}>
                                                 <tbody>
                                                     <tr><td>Avg WPM</td><td>{Math.round(stats.race_avg)}</td></tr>
@@ -421,7 +410,8 @@ const SpeedTypingGame: React.FC = () => {
                     timeLeft={timeLeft}
                     totalMistakes={totalMistakes}
                     WPM={WPM}
-                    resetGame={resetGame}
+                    isFinished={isCompleted || timeLeft === 0}
+                    onPlayAgain={playAgain}
                 />
 
                 {showGraph && (

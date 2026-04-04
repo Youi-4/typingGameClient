@@ -1,31 +1,21 @@
-import {
-  useEffect,
-  useRef,
-  useState,
-} from "react";
+import { useEffect, useRef, useState } from "react";
 import type { ReactNode } from "react";
 import { io, Socket } from "socket.io-client";
-import { useAuthContext } from "../context/useAuthContext";
-import { fetchSocketToken, fetchGuestToken } from "./authApi";
+import { useAuthContext } from "./useAuthContext";
+import { fetchSocketToken, fetchGuestToken } from "../services/authApi";
 import { SharedSpaceContext } from "./SharedSpaceContext";
 import type { SharedMessage, RoomStatus, RoomState, TypeObject } from "./SharedSpaceContext";
-
-/* ------------------ Socket URL ------------------ */
 
 const SOCKET_URL = import.meta.env.VITE_SOCKET_URL
   || (import.meta.env.VITE_API_URL
     ? import.meta.env.VITE_API_URL.replace(/\/api$/, "")
     : "http://localhost:3000");
 
-/* ------------------ Provider ------------------ */
-
 interface SharedSpaceProviderProps {
   children: ReactNode;
 }
 
-export function SharedSpaceProvider({
-  children,
-}: SharedSpaceProviderProps) {
+export function SharedSpaceProvider({ children }: SharedSpaceProviderProps) {
   const { isAuthenticated } = useAuthContext();
   const socketRef = useRef<Socket | null>(null);
   const [sharedData, setSharedData] = useState<SharedMessage[]>([]);
@@ -33,11 +23,12 @@ export function SharedSpaceProvider({
   const [roomId, setRoomId] = useState<string>("");
   const [roomParagraph, setRoomParagraph] = useState<string>("");
   const [roomStatus, setRoomStatus] = useState<string>("");
-  const [namespace, setNamespace] = useState<string>("")
-  const [characterNumber, setCharacterNumber] = useState<number>(0)
+  const [namespace, setNamespace] = useState<string>("");
+  const [characterNumber, setCharacterNumber] = useState<number>(0);
   const [roomSize, setRoomSize] = useState<number>(0);
   const [myUser, setmyUser] = useState<string>("");
   const [guest, setGuest] = useState<boolean>(true);
+
   useEffect(() => {
     let cancelled = false;
 
@@ -47,7 +38,6 @@ export function SharedSpaceProvider({
           ? await fetchSocketToken()
           : await fetchGuestToken();
         if (cancelled) return;
-        console.log("socketToken:",socketToken);
         const socket = io(SOCKET_URL + namespace, {
           withCredentials: true,
           auth: { token: socketToken },
@@ -58,10 +48,7 @@ export function SharedSpaceProvider({
         socketRef.current = socket;
 
         socket.on("connect", () => { setConnected(true); setmyUser(socket.id ?? ""); if (isAuthenticated) { setGuest(false); } else { setGuest(true); } });
-
-        socket.on("disconnect", () => {
-          setConnected(false);
-        });
+        socket.on("disconnect", () => { setConnected(false); });
 
         socket.on("receive-message", (data: SharedMessage) => {
           setSharedData((prev) => {
@@ -83,13 +70,8 @@ export function SharedSpaceProvider({
           setSharedData((prev) => prev.filter((msg) => msg.senderId !== senderId));
         });
 
-        socket.on("room-status", (data: RoomStatus) => {
-          setRoomStatus(data.status);
-        });
-        socket.on("room-state", (data: RoomState) => {
-          setRoomParagraph(data.paragraph);
-          setCharacterNumber(data.characterNumber);
-        });
+        socket.on("room-status", (data: RoomStatus) => { setRoomStatus(data.status); });
+        socket.on("room-state", (data: RoomState) => { setRoomParagraph(data.paragraph); setCharacterNumber(data.characterNumber); });
       } catch (err) {
         console.error("Failed to get socket token:", err);
       }
@@ -114,44 +96,27 @@ export function SharedSpaceProvider({
     };
   }, [isAuthenticated, namespace]);
 
-  // Join room when connected or roomId changes
   useEffect(() => {
     if (!connected || !socketRef.current) return;
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- intentionally clearing data when joining a new room
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setSharedData([]);
-    if(roomSize !== undefined){
-      socketRef.current.emit("join-room", { roomId,roomSize });
-    }else{
+    if (roomSize !== undefined) {
+      socketRef.current.emit("join-room", { roomId, roomSize });
+    } else {
       socketRef.current.emit("join-room", { roomId });
     }
-  }, [roomId,connected]);
+  }, [roomId, connected]);
 
   const sendSharedData = (typeObject: TypeObject) => {
-    socketRef.current?.emit("send-message", {
-      roomId,
-      typeObject,
-    });
+    socketRef.current?.emit("send-message", { roomId, typeObject });
   };
 
   return (
-    <SharedSpaceContext.Provider
-      value={{
-        sharedData,
-        sendSharedData,
-        connected,
-        roomId,
-        setRoomId,
-        roomParagraph,
-        roomStatus,
-        namespace,
-        setNamespace,
-        characterNumber,
-        setRoomSize,
-        roomSize,
-        myUser,
-        guest
-      }}
-    >
+    <SharedSpaceContext.Provider value={{
+      sharedData, sendSharedData, connected, roomId, setRoomId,
+      roomParagraph, roomStatus, namespace, setNamespace, characterNumber,
+      setRoomSize, roomSize, myUser, guest,
+    }}>
       {children}
     </SharedSpaceContext.Provider>
   );

@@ -2,7 +2,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { createRoom } from "../../services/apiGeneral";
-import { useSharedSpace } from "../../services/useSharedSpace"
+import { useSharedSpace } from "../../context/useSharedSpace"
 
 function Home() {
   

@@ -20,3 +20,16 @@ export async function getStatsByUsername(username: string): Promise<AccountStats
   return response.data.message;
 }
 
+export interface LeaderboardEntry {
+  username: string;
+  race_best: number;
+  race_avg: number;
+  race_won: number;
+  race_completed: number;
+}
+
+export async function getLeaderboard(): Promise<LeaderboardEntry[]> {
+  const response = await apiClient.get("/user/profile/leaderboard");
+  return response.data.message;
+}
+

@@ -19,6 +19,7 @@
     "formik": "^2.4.9",
     "framer-motion": "^12.35.0",
     "lottie-react": "^2.4.1",
+    "lucide-react": "^1.7.0",
     "primereact": "^10.9.7",
     "react": "^19.2.3",
     "react-bootstrap": "^2.10.10",
