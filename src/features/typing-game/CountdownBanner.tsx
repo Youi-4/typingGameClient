@@ -7,9 +7,12 @@ export function CountdownBanner({ message }: CountdownBannerProps) {
     return null;
   }
 
+  const isWaiting = message.startsWith("Waiting");
+  const animationKey = isWaiting ? "waiting" : message;
+
   return (
     <div>
-      <h2 key={message} className="animate">{message}</h2>
+      <h2 key={animationKey} className="animate">{message}</h2>
     </div>
   );
 }

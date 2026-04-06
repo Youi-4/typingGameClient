@@ -71,13 +71,14 @@ function SpeedTypingGame() {
   });
 
   useEffect(() => {
-    if (!typingRace.isCompleted || completionSubmittedRef.current) {
+    const isFinished = typingRace.isCompleted || typingRace.timeLeft === 0;
+    if (!isFinished || completionSubmittedRef.current) {
       return;
     }
 
     completionSubmittedRef.current = true;
     const hasOtherPlayers = playerEntries.some(([senderId]) => senderId !== myUser);
-    const won = hasOtherPlayers && !playerEntries.some(
+    const won = typingRace.isCompleted && hasOtherPlayers && !playerEntries.some(
       ([senderId, item]) => senderId !== myUser && item.typeObject.isCompleted
     );
 
@@ -94,7 +95,7 @@ function SpeedTypingGame() {
         });
       })
       .catch(console.error);
-  }, [guest, myUser, playerEntries, typingRace.isCompleted, typingRace.wpm]);
+  }, [guest, myUser, playerEntries, typingRace.isCompleted, typingRace.timeLeft, typingRace.wpm]);
 
   const playerIdsKey = playerEntries.map(([senderId]) => senderId).sort().join(",");
   useEffect(() => {

@@ -25,7 +25,7 @@ export function useRoomLifecycle({
     () => (
       roomSize === 1
         ? ["", "The Race begins in", "3", "2", "1", "Go!"]
-        : ["Waiting for Players to join.", "The Race begins in", "3", "2", "1", "Go!"]
+        : ["Waiting for Players to join", "The Race begins in", "3", "2", "1", "Go!"]
     ),
     [roomSize]
   );
