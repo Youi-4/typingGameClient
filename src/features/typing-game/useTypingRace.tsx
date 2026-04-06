@@ -17,7 +17,7 @@ interface UseTypingRaceOptions {
   sendSharedData: (typeObject: TypeObject) => void;
 }
 
-const MAX_TIME = 90;
+const MAX_TIME = 60;
 
 function buildTypingNodes(sentence: string): ReactNode {
   return Array.from(sentence).map((letter, index) => (

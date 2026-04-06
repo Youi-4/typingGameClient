@@ -498,6 +498,39 @@ test("Private game with five players", async ({ browser }) => {
 
 
 
+test("Play Again and results appear when timer expires before player finishes typing", async ({ page }) => {
+  test.setTimeout(120000);
+
+  // Start a single-player game
+  await page.goto('/Home');
+  await page.getByRole('button', { name: 'Create lobby' }).click();
+  await page.locator('#paragraph').waitFor({ state: 'visible' });
+
+  // Wait for input to be enabled
+  for (let i = 0; i < 10; i++) {
+    const disabled = await page.locator('#game-input-field').isDisabled();
+    if (!disabled) break;
+    await page.waitForTimeout(1000);
+  }
+
+  // Type only the first few characters of the actual paragraph (not the full text)
+  const paragraphText = await page.locator('#paragraph').innerText();
+  const partialText = paragraphText.slice(0, 40);
+  await page.locator('#game-input-field').pressSequentially(partialText, { delay: 50 });
+
+  // Wait for timer to reach exactly 0
+  await expect(page.locator('.time b')).toHaveText('0', { timeout: 65000 });
+
+  // Play Again button should appear when timer expires
+  await expect(page.getByRole('button', { name: 'Play Again' })).toBeVisible({ timeout: 5000 });
+
+  // WPM should be displayed and greater than 0 since we typed correct characters
+  const wpmText = await page.locator('.wpm span').innerText();
+  expect(Number(wpmText)).toBeGreaterThan(0);
+});
+
+
+
 test("Leaving a private game removes that player from the remaining player's view", async ({ browser }) => {
   test.setTimeout(120000);
 
