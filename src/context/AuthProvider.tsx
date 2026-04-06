@@ -62,6 +62,18 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 
   useEffect(() => {
     const init = async () => {
+      // Handle Google OAuth token passed via URL
+      const params = new URLSearchParams(window.location.search);
+      const googleToken = params.get("token");
+      if (googleToken) {
+        document.cookie = `token=${googleToken}; path=/; max-age=${7 * 24 * 60 * 60}; SameSite=Lax`;
+        params.delete("token");
+        const cleanUrl = params.toString()
+          ? `${window.location.pathname}?${params.toString()}`
+          : window.location.pathname;
+        window.history.replaceState({}, "", cleanUrl);
+      }
+
       const authenticated = await checkAuth();
       if (authenticated) {
         const refreshed = await manualTokenRefresh();
