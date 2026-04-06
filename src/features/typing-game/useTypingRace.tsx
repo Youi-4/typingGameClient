@@ -18,7 +18,6 @@ interface UseTypingRaceOptions {
 }
 
 const MAX_TIME = 60;
-
 function buildTypingNodes(sentence: string): ReactNode {
   return Array.from(sentence).map((letter, index) => (
     <span
