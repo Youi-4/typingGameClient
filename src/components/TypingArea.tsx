@@ -7,6 +7,7 @@ interface TypingAreaProps {
   WPM: number;
   isFinished: boolean;
   onPlayAgain: () => void;
+  timeLabel?: string;
 }
 
 const TypingArea = ({
@@ -16,6 +17,7 @@ const TypingArea = ({
   WPM,
   isFinished,
   onPlayAgain,
+  timeLabel = "Time Left:",
 }: TypingAreaProps) => {
   return (
     <div className="section">
@@ -25,7 +27,7 @@ const TypingArea = ({
       <div className="section2">
         <ul className="resultDetails">
           <li className="time">
-            <p>Time Left:</p>
+            <p>{timeLabel}</p>
             <span><b>{timeLeft}</b>s</span>
           </li>
           <li className="mistake">

@@ -15,6 +15,7 @@ interface UseTypingRaceOptions {
   roomParagraph: string;
   isInputDisabled: boolean;
   sendSharedData: (typeObject: TypeObject) => void;
+  practiceMode?: boolean;
 }
 
 const MAX_TIME = 60;
@@ -37,6 +38,7 @@ export function useTypingRace({
   roomParagraph,
   isInputDisabled,
   sendSharedData,
+  practiceMode = false,
 }: UseTypingRaceOptions) {
   const paragraphMeanRef = useRef(0);
   const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -54,7 +56,7 @@ export function useTypingRace({
   const wpmHistoryRef = useRef<WpmHistoryPoint[]>([]);
 
   const [inputValue, setInputValue] = useState("");
-  const [timeLeft, setTimeLeft] = useState(MAX_TIME);
+  const [timeLeft, setTimeLeft] = useState(practiceMode ? 0 : MAX_TIME);
   const [charIndex, setCharIndex] = useState(0);
   const [mistakes, setMistakes] = useState(0);
   const [totalMistakes, setTotalMistakes] = useState(0);
@@ -170,8 +172,16 @@ export function useTypingRace({
 
     const timerInterval = setInterval(() => {
       const elapsed = Math.floor((Date.now() - gameStartTimeRef.current!) / 1000);
-      const remaining = Math.max(0, MAX_TIME - elapsed);
-      setTimeLeft(remaining);
+
+      if (practiceMode) {
+        setTimeLeft(elapsed);
+      } else {
+        const remaining = Math.max(0, MAX_TIME - elapsed);
+        setTimeLeft(remaining);
+        if (remaining <= 0) {
+          clearInterval(timerInterval);
+        }
+      }
 
       if (elapsed > 0 && paragraphMeanRef.current > 0) {
         const liveSnapshot = typeDataRef.current;
@@ -181,10 +191,6 @@ export function useTypingRace({
         const sanitizedWpm = nextWpm > 0 && Number.isFinite(nextWpm) ? nextWpm : 0;
         setWpm(sanitizedWpm);
         wpmHistoryRef.current.push({ elapsed, wpm: sanitizedWpm });
-      }
-
-      if (remaining <= 0) {
-        clearInterval(timerInterval);
       }
     }, 1000);
 
@@ -197,7 +203,7 @@ export function useTypingRace({
       event.key === "Backspace" &&
       charIndex > 0 &&
       charIndex <= characters.length &&
-      timeLeft > 0 &&
+      (practiceMode || timeLeft > 0) &&
       (characters[charIndex - 1].textContent !== " " || mistakes > 0) &&
       charIndex <= roomParagraph.length &&
       mistakes > 0
@@ -222,7 +228,7 @@ export function useTypingRace({
     const typedChar = event.target.value.slice(-1);
     setInputValue("");
 
-    if (charIndex < characters.length && timeLeft > 0) {
+    if (charIndex < characters.length && (practiceMode || timeLeft > 0)) {
       const currentChar = characters[charIndex].innerText;
 
       if (!isTyping) {
@@ -278,6 +284,7 @@ export function useTypingRace({
     inputValue,
     isCompleted,
     showGraph,
+    snapshot,
     timeLeft,
     totalMistakes,
     typingText,

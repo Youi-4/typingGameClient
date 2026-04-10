@@ -28,6 +28,7 @@ interface RaceTrackProps {
   assignedRanks: Record<string, string>;
   settledSenders: Set<string>;
   loadPlayerStats: (senderId: string, senderName: string) => void;
+  hideCharacterOnComplete?: boolean;
 }
 
 function getPlayerProgress(item: SharedMessage, senderId: string, settledSenders: Set<string>) {
@@ -68,6 +69,7 @@ export function RaceTrack({
   assignedRanks,
   settledSenders,
   loadPlayerStats,
+  hideCharacterOnComplete = false,
 }: RaceTrackProps) {
   const [hoveredPlayer, setHoveredPlayer] = useState<string | null>(null);
 
@@ -171,16 +173,18 @@ export function RaceTrack({
                 onMouseLeave={() => setHoveredPlayer(null)}
               >
                 <div className="race-track">
-                  <img
-                    ref={(el) => { imgRefsRef.current[senderId] = el; }}
-                    src={getStaticSprite(senderId, item, assignedRanks)}
-                    className={item.typeObject.isCompleted ? "rank-img" : "character-img"}
-                    alt="moving"
-                    style={{
-                      left,
-                      transition: "left 0.2s ease-out",
-                    }}
-                  />
+                  {!(hideCharacterOnComplete && item.typeObject.isCompleted) && (
+                    <img
+                      ref={(el) => { imgRefsRef.current[senderId] = el; }}
+                      src={getStaticSprite(senderId, item, assignedRanks)}
+                      className={item.typeObject.isCompleted ? "rank-img" : "character-img"}
+                      alt="moving"
+                      style={{
+                        left,
+                        transition: "left 0.2s ease-out",
+                      }}
+                    />
+                  )}
                 </div>
 
                 {hoveredPlayer === senderId && stats && (

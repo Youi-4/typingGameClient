@@ -14,6 +14,7 @@ interface ResultsPanelProps {
   showGraph: boolean;
   graphData: WpmHistoryPoint[];
   accuracy: number;
+  timeLabel?: string;
 }
 
 export function ResultsPanel({
@@ -26,6 +27,7 @@ export function ResultsPanel({
   showGraph,
   graphData,
   accuracy,
+  timeLabel,
 }: ResultsPanelProps) {
   return (
     <>
@@ -36,6 +38,7 @@ export function ResultsPanel({
         WPM={wpm}
         isFinished={isFinished}
         onPlayAgain={onPlayAgain}
+        timeLabel={timeLabel}
       />
 
       {showGraph && (

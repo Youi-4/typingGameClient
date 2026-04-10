@@ -3,6 +3,7 @@ import Home from "./pages/Home/Home"
 import Login from "./pages/Login/Login"
 import NotFound from "./pages/Not_Found/NotFound"
 import TypingGameKeyed from "./TypingGameKeyed"
+import PracticeGame from "./PracticeGame";
 import SignUp from "./pages/SignUp/Signup";
 import PrivateRoute from "./utils/PrivateRoute";
 import PublicRoute from "./utils/PublicRoute";
@@ -32,6 +33,7 @@ const router = createBrowserRouter([
       { path: "/Home", element: <Home /> },
       { path: "/Stats", element: <Stats /> },
       { path: "/Leaderboard", element: <Leaderboard /> },
+      { path: "/Practice", element: <PracticeGame /> },
       { path: "/Play/:roomId", element: <TypingGameKeyed /> },
       {
         path: "*",

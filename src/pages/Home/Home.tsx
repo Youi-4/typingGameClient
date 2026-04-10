@@ -1,15 +1,17 @@
 import { useState, useEffect, useRef, type FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
 import { createRoom } from "../../services/apiGeneral";
-import { useSharedSpace } from "../../context/useSharedSpace"
+import { useSharedSpace } from "../../context/useSharedSpace";
+import "./Home.css";
 
 function Home() {
   const { setNamespace, setRoomId, setRoomSize } = useSharedSpace();
   const navigate = useNavigate();
-  const [roomInput, setRoomInput] = useState<string>("");
+  const [roomInput, setRoomInput] = useState("");
   const [joiningGame, setJoiningGame] = useState(false);
-  const [roomSizeInput, setRoomSizeInput] = useState<number>(1);
-  const [generatedRoom, setGeneratedRoom] = useState<string>("");
+  const [roomSizeInput, setRoomSizeInput] = useState(1);
+  const [generatedRoom, setGeneratedRoom] = useState("");
+  const [showPrivate, setShowPrivate] = useState(false);
   const hasCreated = useRef(false);
 
   const generatePrivateRoom = async () => {
@@ -21,18 +23,11 @@ function Home() {
   useEffect(() => {
     if (hasCreated.current) return;
     hasCreated.current = true;
-    const generateRoom = async () => {
-      try {
-        await generatePrivateRoom();
-      } catch (err) {
-        console.error("createRoom failed:", err);
-      }
-    };
-    generateRoom();
+    generatePrivateRoom().catch(console.error);
   }, []);
 
   const createLobby = async () => {
-    const roomId = generatedRoom || await generatePrivateRoom();
+    const roomId = generatedRoom || (await generatePrivateRoom());
     setNamespace("/private_game");
     setRoomSize(roomSizeInput);
     setRoomId(roomId);
@@ -40,9 +35,8 @@ function Home() {
     navigate(`/Play/${roomId}`);
   };
 
-  const joinLobby = async (event: FormEvent<HTMLFormElement>) => {
+  const joinLobby = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-
     const trimmed = roomInput.trim();
     if (!trimmed) return;
     setJoiningGame(true);
@@ -51,6 +45,7 @@ function Home() {
     setNamespace("/private_game");
     navigate(`/Play/${trimmed}`);
   };
+
   const onlineLobby = async () => {
     setJoiningGame(true);
     const roomId = await createRoom("public");
@@ -59,60 +54,106 @@ function Home() {
     setRoomId(roomId);
     navigate(`/Play/${roomId}`);
   };
+
   return (
-    <div className="lobby-card">
-      <div className="lobby-header">
-        <h1 className="lobby-title">Create a room or join one to play together.</h1>
+    <div className="home-card">
+      <div className="home-intro">
+        <span className="home-intro-label">Typing Game</span>
+        <h1 className="home-intro-title">How do you want to play?</h1>
+        <p className="home-intro-sub">Race live against others, warm up solo, or set up a private room with friends.</p>
       </div>
-      <button className="lobby-button" id="online-game-button" onClick={onlineLobby} disabled={joiningGame}>
-        Join online game
-      </button>
-      <div className="lobby-grid">
-        <div className="lobby-panel">
-          <h2>Create a lobby</h2>
-          <p>Start a new game room and share the link.</p>
-          <label htmlFor="roomSize">Players:</label>
-          <select id="roomSize"
-            name="roomSize"
-            value={roomSizeInput}
-            onChange={(e) => setRoomSizeInput(Number(e.target.value))}
+
+      <div className="mode-grid">
+        {/* Online */}
+        <div className="mode-card">
+          <span className="mode-icon">🌐</span>
+          <h2 className="mode-title">Online Race</h2>
+          <p className="mode-desc">Get matched with real players and compete in a live typing race.</p>
+          <button
+            className="mode-btn mode-btn--primary"
+            onClick={onlineLobby}
+            disabled={joiningGame}
           >
-            {Array.from({ length: 5 }, (_, i) => (
-              <option key={i + 1} value={i + 1}>
-                {i + 1}
-              </option>
-            ))}
-          </select>
-
-          <div></div>
-          <button className="lobby-button" onClick={createLobby}>
-            Create lobby
+            Join a race →
           </button>
-
-
-
-          <div className="lobby-hint">Room code: {generatedRoom}</div>
         </div>
 
-        <div className="lobby-panel">
-          <h2>Join a lobby</h2>
-          <p>Enter a room code or paste a link code.</p>
-          <form className="lobby-form" onSubmit={joinLobby}>
-            <input
-              className="lobby-input"
-              placeholder="room code"
-              value={roomInput}
-              onChange={(event) => setRoomInput(event.target.value)}
-            />
-            <button className="lobby-button" type="submit">
-              Join lobby
-            </button>
-          </form>
+        {/* Practice */}
+        <div className="mode-card">
+          <span className="mode-icon">🎯</span>
+          <h2 className="mode-title">Practice</h2>
+          <p className="mode-desc">No timer, no pressure. Just you and the keyboard — start instantly.</p>
+          <button
+            className="mode-btn mode-btn--primary"
+            onClick={() => navigate("/Practice")}
+            disabled={joiningGame}
+          >
+            Start practicing →
+          </button>
+        </div>
+
+        {/* Private */}
+        <div className={`mode-card${showPrivate ? " mode-card--active" : ""}`}>
+          <span className="mode-icon">🔒</span>
+          <h2 className="mode-title">Private Lobby</h2>
+          <p className="mode-desc">Create a room and share the code, or paste a friend's code to join.</p>
+          <button
+            className="mode-btn mode-btn--ghost"
+            onClick={() => setShowPrivate((v) => !v)}
+          >
+            {showPrivate ? "Collapse ↑" : "Set up →"}
+          </button>
         </div>
       </div>
-      <h1 className="lobby-title" id="waiting" hidden={!joiningGame}>Please wait to join your game</h1>
-    </div>
 
+      {/* Private expandable section */}
+      <div className={`private-section${showPrivate ? " private-section--open" : ""}`}>
+        <div className="private-inner">
+          <div className="private-panel">
+            <h2>Create a lobby</h2>
+            <p>Share the room code with your friends.</p>
+            <label htmlFor="roomSize">Players:</label>
+            <select
+              id="roomSize"
+              value={roomSizeInput}
+              onChange={(e) => setRoomSizeInput(Number(e.target.value))}
+            >
+              {Array.from({ length: 5 }, (_, i) => (
+                <option key={i + 1} value={i + 1}>
+                  {i + 1}
+                </option>
+              ))}
+            </select>
+            <button className="mode-btn mode-btn--primary" onClick={createLobby} disabled={joiningGame}>
+              Create lobby
+            </button>
+            <span className="private-hint">Room code: {generatedRoom || "generating…"}</span>
+          </div>
+
+          <div className="private-panel">
+            <h2>Join a lobby</h2>
+            <p>Enter the room code from your friend.</p>
+            <form onSubmit={joinLobby} style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+              <div className="private-room-row">
+                <input
+                  className="lobby-input"
+                  placeholder="room code"
+                  value={roomInput}
+                  onChange={(e) => setRoomInput(e.target.value)}
+                />
+              </div>
+              <button className="mode-btn mode-btn--primary" type="submit" disabled={joiningGame}>
+                Join lobby
+              </button>
+            </form>
+          </div>
+        </div>
+      </div>
+
+      {joiningGame && (
+        <p className="home-waiting">Joining your game, please wait…</p>
+      )}
+    </div>
   );
 }
 
