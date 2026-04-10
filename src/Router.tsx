@@ -1,18 +1,12 @@
-import { createBrowserRouter, useParams } from "react-router-dom";
+import { Navigate, RouterProvider, createBrowserRouter } from "react-router-dom";
 import Home from "./pages/Home/Home"
 import Login from "./pages/Login/Login"
 import NotFound from "./pages/Not_Found/NotFound"
-import TypingGame from "./TypingGame"
+import TypingGameKeyed from "./TypingGameKeyed"
 import SignUp from "./pages/SignUp/Signup";
-import { Navigate } from "react-router-dom";
 import PrivateRoute from "./utils/PrivateRoute";
 import PublicRoute from "./utils/PublicRoute";
 import RootLayout from "./RootLayout";
-
-function TypingGameKeyed() {
-  const { roomId } = useParams();
-  return <TypingGame key={roomId} />;
-}
 import Stats from "./pages/Stats/Stats";
 import Leaderboard from "./pages/Leaderboard/Leaderboard";
 
@@ -46,4 +40,9 @@ const router = createBrowserRouter([
     ]
   },
 ])
-export default router
+
+const AppRouter = () => {
+  return <RouterProvider router={router} />;
+};
+
+export default AppRouter;

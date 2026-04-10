@@ -1,5 +1,7 @@
 # Typing Game Client
 
+![CI](https://github.com/Youi-4/typingGameClient/actions/workflows/ci.yml/badge.svg)
+
 React frontend for a real-time multiplayer typing race game. Players join public or private rooms, race to type a paragraph, and see live WPM stats, rankings, and a leaderboard.
 
 **Live site:** https://typecrisp.vercel.app/
@@ -73,6 +75,7 @@ Public games use the `/public_game` namespace and server-managed matchmaking (no
 
 - `npm run dev` — start the Vite dev server.
 - `npm run build` — type-check and create a production build.
+- `npm run test:unit` — run Vitest unit tests for hooks and utilities.
 - `npm run test:e2e` — run the Playwright end-to-end suite.
 
 ## Notes

@@ -1,6 +1,6 @@
-import { test, expect } from "@playwright/test";
+import { test, expect, type BrowserContext, type Page } from "@playwright/test";
 
-async function waitForGeneratedRoomCode(page: import("@playwright/test").Page) {
+async function waitForGeneratedRoomCode(page: Page) {
   await expect
     .poll(async () => {
       const hintText = (await page.locator(".lobby-hint").textContent()) ?? "";
@@ -9,7 +9,7 @@ async function waitForGeneratedRoomCode(page: import("@playwright/test").Page) {
     .not.toBe("");
 }
 
-async function createPrivateLobby(page: import("@playwright/test").Page, size: number) {
+async function createPrivateLobby(page: Page, size: number) {
   await page.goto("/Home");
   await waitForGeneratedRoomCode(page);
   await page.getByLabel("Players:").selectOption(String(size));
@@ -18,20 +18,36 @@ async function createPrivateLobby(page: import("@playwright/test").Page, size: n
   return page.url().split("/").pop()!;
 }
 
-async function joinPrivateLobby(page: import("@playwright/test").Page, lobbyCode: string) {
+async function joinPrivateLobby(page: Page, lobbyCode: string) {
   await page.goto("/Home");
   await page.getByRole("textbox", { name: "room code" }).fill(lobbyCode);
   await page.getByRole("button", { name: "Join lobby" }).click();
   await expect(page).toHaveURL(new RegExp(`/Play/${lobbyCode}$`));
 }
 
-async function waitForPlayerPanels(page: import("@playwright/test").Page, count: number) {
+async function waitForPlayerPanels(page: Page, count: number) {
   await expect(page.locator(".play-panel")).toHaveCount(count, { timeout: 10000 });
 }
 
-async function waitForGameInputEnabled(page: import("@playwright/test").Page) {
+async function waitForGameInputEnabled(page: Page) {
   await page.locator("#paragraph").waitFor({ state: "visible" });
   await expect(page.locator("#game-input-field")).toBeEnabled({ timeout: 15000 });
+}
+
+async function finishRaceInRankOrder(players: Page[], paragraphText: string) {
+  await Promise.all(
+    players.map(async (page, index) => {
+      if (index > 0) {
+        await page.waitForTimeout(index * 500);
+      }
+      await page.locator("#game-input-field").pressSequentially(paragraphText, { delay: 5 });
+    })
+  );
+}
+
+async function closePlayerSessions(players: Page[], contexts: BrowserContext[]) {
+  await Promise.allSettled(players.map((page) => page.close()));
+  await Promise.allSettled(contexts.map((context) => context.close()));
 }
 
 test("home page loads and can create a lobby", async ({ page }) => {
@@ -370,35 +386,24 @@ test("Private game with three players", async ({ browser }) => {
 
   const contexts = await Promise.all([browser.newContext(), browser.newContext(), browser.newContext()]);
   const players = await Promise.all(contexts.map(ctx => ctx.newPage()));
+  try {
+    const lobbyCode = await createPrivateLobby(players[0], 3);
+    await joinPrivateLobby(players[1], lobbyCode);
+    await joinPrivateLobby(players[2], lobbyCode);
 
-  const lobbyCode = await createPrivateLobby(players[0], 3);
-  await joinPrivateLobby(players[1], lobbyCode);
-  await joinPrivateLobby(players[2], lobbyCode);
+    await Promise.all(players.map(p => p.locator('#paragraph').waitFor({ state: 'visible' })));
 
-  await Promise.all(players.map(p => p.locator('#paragraph').waitFor({ state: 'visible' })));
+    const paragraphText = await players[0].locator('#paragraph').innerText();
 
-  const paragraphText = await players[0].locator('#paragraph').innerText();
+    await Promise.all(players.map(waitForGameInputEnabled));
+    await finishRaceInRankOrder(players, paragraphText);
 
-  await Promise.all(players.map(async (p) => {
-    for (let i = 0; i < 10; i++) {
-      const disabled = await p.locator('#game-input-field').isDisabled();
-      if (!disabled) break;
-      await p.waitForTimeout(1000);
-    }
-  }));
-
-  await Promise.all([
-    players[0].locator('#game-input-field').pressSequentially(paragraphText, { delay: 30 }),
-    players[1].locator('#game-input-field').pressSequentially(paragraphText, { delay: 35 }),
-    players[2].locator('#game-input-field').pressSequentially(paragraphText, { delay: 40 }),
-  ]);
-
-  await expect(players[0].locator('.rank-img').first()).toHaveAttribute('src', /1st.png/, { timeout: 5000 });
-  await expect(players[1].locator('.rank-img').nth(1)).toHaveAttribute('src', /2nd.png/, { timeout: 5000 });
-  await expect(players[2].locator('.rank-img').nth(2)).toHaveAttribute('src', /3rd.png/, { timeout: 5000 });
-
-  await Promise.all(players.map(p => p.close()));
-  await Promise.all(contexts.map(c => c.close()));
+    await expect(players[0].locator('.rank-img').first()).toHaveAttribute('src', /1st.png/, { timeout: 5000 });
+    await expect(players[1].locator('.rank-img').nth(1)).toHaveAttribute('src', /2nd.png/, { timeout: 5000 });
+    await expect(players[2].locator('.rank-img').nth(2)).toHaveAttribute('src', /3rd.png/, { timeout: 5000 });
+  } finally {
+    await closePlayerSessions(players, contexts);
+  }
 });
 
 
@@ -411,39 +416,27 @@ test("Private game with four players", async ({ browser }) => {
 
   const contexts = await Promise.all([browser.newContext(), browser.newContext(), browser.newContext(), browser.newContext()]);
   const players = await Promise.all(contexts.map(ctx => ctx.newPage()));
+  try {
+    const lobbyCode = await createPrivateLobby(players[0], 4);
 
-  const lobbyCode = await createPrivateLobby(players[0], 4);
-
-  for (const player of players.slice(1)) {
-    await joinPrivateLobby(player, lobbyCode);
-  }
-
-  await Promise.all(players.map(p => p.locator('#paragraph').waitFor({ state: 'visible' })));
-
-  const paragraphText = await players[0].locator('#paragraph').innerText();
-
-  await Promise.all(players.map(async (p) => {
-    for (let i = 0; i < 10; i++) {
-      const disabled = await p.locator('#game-input-field').isDisabled();
-      if (!disabled) break;
-      await p.waitForTimeout(1000);
+    for (const player of players.slice(1)) {
+      await joinPrivateLobby(player, lobbyCode);
     }
-  }));
 
-  await Promise.all([
-    players[0].locator('#game-input-field').pressSequentially(paragraphText, { delay: 30 }),
-    players[1].locator('#game-input-field').pressSequentially(paragraphText, { delay: 35 }),
-    players[2].locator('#game-input-field').pressSequentially(paragraphText, { delay: 40 }),
-    players[3].locator('#game-input-field').pressSequentially(paragraphText, { delay: 45 }),
-  ]);
+    await Promise.all(players.map(p => p.locator('#paragraph').waitFor({ state: 'visible' })));
 
-  await expect(players[0].locator('.rank-img').first()).toHaveAttribute('src', /1st.png/, { timeout: 5000 });
-  await expect(players[1].locator('.rank-img').nth(1)).toHaveAttribute('src', /2nd.png/, { timeout: 5000 });
-  await expect(players[2].locator('.rank-img').nth(2)).toHaveAttribute('src', /3rd.png/, { timeout: 5000 });
-  await expect(players[3].locator('.rank-img').nth(3)).toHaveAttribute('src', /4th.png/, { timeout: 5000 });
+    const paragraphText = await players[0].locator('#paragraph').innerText();
 
-  await Promise.all(players.map(p => p.close()));
-  await Promise.all(contexts.map(c => c.close()));
+    await Promise.all(players.map(waitForGameInputEnabled));
+    await finishRaceInRankOrder(players, paragraphText);
+
+    await expect(players[0].locator('.rank-img').first()).toHaveAttribute('src', /1st.png/, { timeout: 5000 });
+    await expect(players[1].locator('.rank-img').nth(1)).toHaveAttribute('src', /2nd.png/, { timeout: 5000 });
+    await expect(players[2].locator('.rank-img').nth(2)).toHaveAttribute('src', /3rd.png/, { timeout: 5000 });
+    await expect(players[3].locator('.rank-img').nth(3)).toHaveAttribute('src', /4th.png/, { timeout: 5000 });
+  } finally {
+    await closePlayerSessions(players, contexts);
+  }
 });
 
 
@@ -457,41 +450,28 @@ test("Private game with five players", async ({ browser }) => {
 
   const contexts = await Promise.all([browser.newContext(), browser.newContext(), browser.newContext(), browser.newContext(), browser.newContext()]);
   const players = await Promise.all(contexts.map(ctx => ctx.newPage()));
+  try {
+    const lobbyCode = await createPrivateLobby(players[0], 5);
 
-  const lobbyCode = await createPrivateLobby(players[0], 5);
-
-  for (const player of players.slice(1)) {
-    await joinPrivateLobby(player, lobbyCode);
-  }
-
-  await Promise.all(players.map(p => p.locator('#paragraph').waitFor({ state: 'visible' })));
-
-  const paragraphText = await players[0].locator('#paragraph').innerText();
-
-  await Promise.all(players.map(async (p) => {
-    for (let i = 0; i < 10; i++) {
-      const disabled = await p.locator('#game-input-field').isDisabled();
-      if (!disabled) break;
-      await p.waitForTimeout(1000);
+    for (const player of players.slice(1)) {
+      await joinPrivateLobby(player, lobbyCode);
     }
-  }));
 
-  await Promise.all([
-    players[0].locator('#game-input-field').pressSequentially(paragraphText, { delay: 30 }),
-    players[1].locator('#game-input-field').pressSequentially(paragraphText, { delay: 35 }),
-    players[2].locator('#game-input-field').pressSequentially(paragraphText, { delay: 40 }),
-    players[3].locator('#game-input-field').pressSequentially(paragraphText, { delay: 45 }),
-    players[4].locator('#game-input-field').pressSequentially(paragraphText, { delay: 50 }),
-  ]);
+    await Promise.all(players.map(p => p.locator('#paragraph').waitFor({ state: 'visible' })));
 
-  await expect(players[0].locator('.rank-img').first()).toHaveAttribute('src', /1st.png/, { timeout: 5000 });
-  await expect(players[1].locator('.rank-img').nth(1)).toHaveAttribute('src', /2nd.png/, { timeout: 5000 });
-  await expect(players[2].locator('.rank-img').nth(2)).toHaveAttribute('src', /3rd.png/, { timeout: 5000 });
-  await expect(players[3].locator('.rank-img').nth(3)).toHaveAttribute('src', /4th.png/, { timeout: 5000 });
-  await expect(players[4].locator('.rank-img').nth(4)).toHaveAttribute('src', /5th.png/, { timeout: 5000 });
+    const paragraphText = await players[0].locator('#paragraph').innerText();
 
-  await Promise.all(players.map(p => p.close()));
-  await Promise.all(contexts.map(c => c.close()));
+    await Promise.all(players.map(waitForGameInputEnabled));
+    await finishRaceInRankOrder(players, paragraphText);
+
+    await expect(players[0].locator('.rank-img').first()).toHaveAttribute('src', /1st.png/, { timeout: 5000 });
+    await expect(players[1].locator('.rank-img').nth(1)).toHaveAttribute('src', /2nd.png/, { timeout: 5000 });
+    await expect(players[2].locator('.rank-img').nth(2)).toHaveAttribute('src', /3rd.png/, { timeout: 5000 });
+    await expect(players[3].locator('.rank-img').nth(3)).toHaveAttribute('src', /4th.png/, { timeout: 5000 });
+    await expect(players[4].locator('.rank-img').nth(4)).toHaveAttribute('src', /5th.png/, { timeout: 5000 });
+  } finally {
+    await closePlayerSessions(players, contexts);
+  }
 });
 
 

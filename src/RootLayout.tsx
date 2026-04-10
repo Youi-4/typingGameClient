@@ -1,7 +1,7 @@
 import Navigation from "./pages/Navigation/Navigation";
 import { Outlet } from "react-router-dom";
 import { Toaster } from "react-hot-toast";
-import { useTheme } from "./context/ThemeContext";
+import { useTheme } from "./context/useTheme";
 
 const RootLayout = () => {
   const { theme } = useTheme();

@@ -2,7 +2,7 @@ import { Bell, Sun, Moon, LogOut } from 'lucide-react';
 import { useLocation, Link, useNavigate } from 'react-router-dom';
 import { useRef, useState, useEffect } from 'react';
 import { useAuthContext } from '../../context/useAuthContext';
-import { useTheme } from '../../context/ThemeContext';
+import { useTheme } from '../../context/useTheme';
 import './Navigation.css';
 
 function Navigation() {

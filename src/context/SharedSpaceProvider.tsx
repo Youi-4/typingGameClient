@@ -23,7 +23,7 @@ export function SharedSpaceProvider({ children }: SharedSpaceProviderProps) {
   const pendingLeaveRoomIdRef = useRef<string | null>(null);
   const [sharedData, setSharedData] = useState<SharedMessage[]>([]);
   const [connected, setConnected] = useState<boolean>(false);
-  const [roomId, setRoomId] = useState<string>("");
+  const [roomId, setRoomIdState] = useState<string>("");
   const [roomParagraph, setRoomParagraph] = useState<string>("");
   const [roomStatus, setRoomStatus] = useState<string>("");
   const [namespace, setNamespace] = useState<string>("");
@@ -35,6 +35,18 @@ export function SharedSpaceProvider({ children }: SharedSpaceProviderProps) {
   useEffect(() => {
     roomIdRef.current = roomId;
   }, [roomId]);
+
+  const resetRoomState = () => {
+    setSharedData([]);
+    setRoomStatus("");
+    setRoomParagraph("");
+  };
+
+  const setRoomId = (nextRoomId: string) => {
+    resetRoomState();
+    roomIdRef.current = nextRoomId;
+    setRoomIdState(nextRoomId);
+  };
 
   useEffect(() => {
     let cancelled = false;
@@ -111,15 +123,12 @@ export function SharedSpaceProvider({ children }: SharedSpaceProviderProps) {
   useEffect(() => {
     if (!connected || !socketRef.current) return;
     if (!roomId) return;
-    setSharedData([]);
-    setRoomStatus("");
-    setRoomParagraph("");
     if (typeof roomSize === "number" && roomSize > 0) {
       socketRef.current.emit("join-room", { roomId, roomSize });
     } else {
       socketRef.current.emit("join-room", { roomId });
     }
-  }, [roomId, connected]);
+  }, [connected, roomId, roomSize]);
 
   const sendSharedData = (typeObject: TypeObject) => {
     socketRef.current?.emit("send-message", { roomId, typeObject });
@@ -129,11 +138,9 @@ export function SharedSpaceProvider({ children }: SharedSpaceProviderProps) {
     const activeRoomId = roomIdToLeave ?? roomIdRef.current;
     if (!socketRef.current || !activeRoomId) return;
     socketRef.current.emit("leave-room", { roomId: activeRoomId });
-    setSharedData([]);
-    setRoomStatus("");
-    setRoomParagraph("");
+    resetRoomState();
     if (roomIdRef.current === activeRoomId) {
-      setRoomId("");
+      setRoomIdState("");
       setRoomSize(null);
       roomIdRef.current = "";
     }

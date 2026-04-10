@@ -37,6 +37,7 @@ function SpeedTypingGame() {
   const completionSubmittedRef = useRef(false);
   const completedPlayersRef = useRef<Set<string>>(new Set());
   const settleTimeoutsRef = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map());
+  const rankTimeoutsRef = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map());
   const rankPoolRef = useRef(["/6th.png", "/5th.png", "/4th.png", "/3rd.png", "/2nd.png", "/1st.png"]);
 
   const latestBySender = useMemo(
@@ -97,24 +98,32 @@ function SpeedTypingGame() {
       .catch(console.error);
   }, [guest, myUser, playerEntries, typingRace.isCompleted, typingRace.timeLeft, typingRace.wpm]);
 
-  const playerIdsKey = playerEntries.map(([senderId]) => senderId).sort().join(",");
+  const playerIdsKey = useMemo(
+    () => playerEntries.map(([senderId]) => senderId).sort().join(","),
+    [playerEntries]
+  );
+  const playerIds = useMemo(
+    () => (playerIdsKey ? playerIdsKey.split(",") : []),
+    [playerIdsKey]
+  );
+
   useEffect(() => {
-    if (playerEntries.length === 0) {
+    if (playerIds.length === 0) {
       return;
     }
 
     const interval = setInterval(() => {
       setLocalImgCounts((current) => {
-        const next = { ...current };
-        for (const [senderId] of playerEntries) {
-          next[senderId] = ((next[senderId] ?? 0) + 1) % 10;
+        const next: Record<string, number> = {};
+        for (const senderId of playerIds) {
+          next[senderId] = ((current[senderId] ?? 0) + 1) % 10;
         }
         return next;
       });
     }, 500);
 
     return () => clearInterval(interval);
-  }, [playerEntries, playerIdsKey]);
+  }, [playerIds]);
 
   useEffect(() => {
     for (const [senderId, item] of playerEntries) {
@@ -123,9 +132,17 @@ function SpeedTypingGame() {
       }
 
       completedPlayersRef.current.add(senderId);
-      if (!assignedRanks[senderId] && item.typeObject.mistakes === 0) {
+      if (item.typeObject.mistakes === 0) {
         const rank = rankPoolRef.current.pop() ?? "/1st.png";
-        setAssignedRanks((current) => ({ ...current, [senderId]: rank }));
+        const rankTimeoutId = setTimeout(() => {
+          setAssignedRanks((current) => (
+            current[senderId]
+              ? current
+              : { ...current, [senderId]: rank }
+          ));
+          rankTimeoutsRef.current.delete(senderId);
+        }, 0);
+        rankTimeoutsRef.current.set(senderId, rankTimeoutId);
       }
 
       const timeoutId = setTimeout(() => {
@@ -137,14 +154,22 @@ function SpeedTypingGame() {
       }, 800);
       settleTimeoutsRef.current.set(senderId, timeoutId);
     }
-  }, [assignedRanks, playerEntries]);
+  }, [playerEntries]);
 
   useEffect(() => {
+    const settleTimeouts = settleTimeoutsRef.current;
+    const rankTimeouts = rankTimeoutsRef.current;
+
     return () => {
-      for (const timeoutId of settleTimeoutsRef.current.values()) {
+      for (const timeoutId of settleTimeouts.values()) {
         clearTimeout(timeoutId);
       }
-      settleTimeoutsRef.current.clear();
+      settleTimeouts.clear();
+
+      for (const timeoutId of rankTimeouts.values()) {
+        clearTimeout(timeoutId);
+      }
+      rankTimeouts.clear();
     };
   }, []);
 

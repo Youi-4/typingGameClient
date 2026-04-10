@@ -1,5 +1,4 @@
-
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, type FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
 import { createRoom } from "../../services/apiGeneral";
 import { useSharedSpace } from "../../context/useSharedSpace"
@@ -41,7 +40,7 @@ function Home() {
     navigate(`/Play/${roomId}`);
   };
 
-  const joinLobby = async (event: React.FormEvent<HTMLFormElement>) => {
+  const joinLobby = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
     const trimmed = roomInput.trim();

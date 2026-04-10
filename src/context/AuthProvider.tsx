@@ -119,7 +119,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       setIsAuthenticated(false);
       setUser(null);
       setSessionId(null);
-    } catch (error) {
+    } catch {
       setIsAuthError(true);
     }
   };

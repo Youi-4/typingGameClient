@@ -53,7 +53,6 @@ export function useTypingRace({
   });
   const wpmHistoryRef = useRef<WpmHistoryPoint[]>([]);
 
-  const [typingText, setTypingText] = useState<ReactNode>([]);
   const [inputValue, setInputValue] = useState("");
   const [timeLeft, setTimeLeft] = useState(MAX_TIME);
   const [charIndex, setCharIndex] = useState(0);
@@ -84,6 +83,8 @@ export function useTypingRace({
     totalMistakes,
     wpm,
   ]);
+
+  const typingText = useMemo(() => buildTypingNodes(roomParagraph), [roomParagraph]);
 
   useEffect(() => {
     const focusInput = () => {
@@ -120,20 +121,6 @@ export function useTypingRace({
     };
     paragraphMeanRef.current = (roomParagraph.length - wordCount) / wordCount;
     typeDataRef.current = resetSnapshot;
-
-    setTypingText(buildTypingNodes(roomParagraph));
-    setInputValue("");
-    setTimeLeft(MAX_TIME);
-    setCharIndex(0);
-    setMistakes(0);
-    setTotalMistakes(0);
-    setIsTyping(false);
-    setWpm(0);
-    setCharIndexBeforeMistake(0);
-    setIsActivelyTyping(false);
-    setIsCompleted(false);
-    setWpmHistory([]);
-    setShowGraph(false);
     wpmHistoryRef.current = [];
     gameStartTimeRef.current = null;
 

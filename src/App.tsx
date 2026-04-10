@@ -1,9 +1,7 @@
-import { RouterProvider } from "react-router-dom";
-
-import router from "./Router";
+import AppRouter from "./Router";
 import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 import { AuthProvider } from "./context/AuthProvider";
-import { ThemeProvider } from "./context/ThemeContext";
+import { ThemeProvider } from "./context/ThemeProvider";
 import { UserProfileProvider } from "./context/UserProfileProvider";
 import { SharedSpaceProvider } from "./context/SharedSpaceProvider";
 import {
@@ -20,7 +18,7 @@ function App() {
         <AuthProvider>
           <UserProfileProvider>
             <SharedSpaceProvider>
-              <RouterProvider router={router} />
+              <AppRouter />
               <ReactQueryDevtools initialIsOpen={false} />
             </SharedSpaceProvider>
           </UserProfileProvider>
