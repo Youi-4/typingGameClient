@@ -4,6 +4,7 @@ import { AuthProvider } from "./context/AuthProvider";
 import { ThemeProvider } from "./context/ThemeProvider";
 import { UserProfileProvider } from "./context/UserProfileProvider";
 import { SharedSpaceProvider } from "./context/SharedSpaceProvider";
+import { ErrorBoundary } from "./components/ErrorBoundary";
 import {
   QueryClient,
   QueryClientProvider,
@@ -13,18 +14,22 @@ const queryClient = new QueryClient();
 
 function App() {
   return (
-    <QueryClientProvider client={queryClient}>
-      <ThemeProvider>
-        <AuthProvider>
-          <UserProfileProvider>
-            <SharedSpaceProvider>
-              <AppRouter />
-              <ReactQueryDevtools initialIsOpen={false} />
-            </SharedSpaceProvider>
-          </UserProfileProvider>
-        </AuthProvider>
-      </ThemeProvider>
-    </QueryClientProvider>
+    <ErrorBoundary>
+      <QueryClientProvider client={queryClient}>
+        <ThemeProvider>
+          <AuthProvider>
+            <UserProfileProvider>
+              <SharedSpaceProvider>
+                <ErrorBoundary>
+                  <AppRouter />
+                </ErrorBoundary>
+                <ReactQueryDevtools initialIsOpen={false} />
+              </SharedSpaceProvider>
+            </UserProfileProvider>
+          </AuthProvider>
+        </ThemeProvider>
+      </QueryClientProvider>
+    </ErrorBoundary>
   );
 }
 

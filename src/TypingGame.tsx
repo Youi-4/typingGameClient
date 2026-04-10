@@ -30,7 +30,6 @@ function SpeedTypingGame() {
     guest,
   } = useSharedSpace();
 
-  const [localImgCounts, setLocalImgCounts] = useState<Record<string, number>>({});
   const [assignedRanks, setAssignedRanks] = useState<Record<string, string>>({});
   const [settledSenders, setSettledSenders] = useState<Set<string>>(new Set());
   const [playerStatsCache, setPlayerStatsCache] = useState<Record<string, StatsDto>>({});
@@ -97,33 +96,6 @@ function SpeedTypingGame() {
       })
       .catch(console.error);
   }, [guest, myUser, playerEntries, typingRace.isCompleted, typingRace.timeLeft, typingRace.wpm]);
-
-  const playerIdsKey = useMemo(
-    () => playerEntries.map(([senderId]) => senderId).sort().join(","),
-    [playerEntries]
-  );
-  const playerIds = useMemo(
-    () => (playerIdsKey ? playerIdsKey.split(",") : []),
-    [playerIdsKey]
-  );
-
-  useEffect(() => {
-    if (playerIds.length === 0) {
-      return;
-    }
-
-    const interval = setInterval(() => {
-      setLocalImgCounts((current) => {
-        const next: Record<string, number> = {};
-        for (const senderId of playerIds) {
-          next[senderId] = ((current[senderId] ?? 0) + 1) % 10;
-        }
-        return next;
-      });
-    }, 500);
-
-    return () => clearInterval(interval);
-  }, [playerIds]);
 
   useEffect(() => {
     for (const [senderId, item] of playerEntries) {
@@ -204,7 +176,6 @@ function SpeedTypingGame() {
           myUser={myUser}
           roomParagraphLength={roomParagraph.length}
           roomSize={roomSize}
-          localImgCounts={localImgCounts}
           playerStatsCache={playerStatsCache}
           assignedRanks={assignedRanks}
           settledSenders={settledSenders}

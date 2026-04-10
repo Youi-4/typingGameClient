@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import type { SharedMessage } from "../../context/SharedSpaceContext";
 import type { StatsDto } from "../../types/api";
@@ -6,13 +6,24 @@ import type { StatsDto } from "../../types/api";
 const WALK_FRAMES = ["/walk_0.png", "/walk_1.png", "/walk_2.png", "/walk_3.png", "/walk_4.png", "/walk_5.png", "/walk_6.png", "/walk_7.png", "/walk_8.png", "/walk_9.png"];
 const RUN_FRAMES = ["/run_0.png", "/run_1.png", "/run_2.png", "/run_3.png", "/run_4.png", "/run_5.png", "/run_6.png", "/run_7.png", "/run_8.png", "/run_9.png"];
 const IDLE_FRAME = "/Idle_0.png";
+const WALK_FRAME_MS = 130; // ~7.7fps — deliberate walking pace
+const RUN_FRAME_MS = 75;   // ~13.3fps — snappy running pace
+
+type AnimType = "walk" | "run" | "idle" | "completed";
+
+function getAnimType(item: SharedMessage): AnimType {
+  if (item.typeObject.isCompleted) return "completed";
+  if (item.typeObject.isActivelyTyping && item.typeObject.mistakes === 0) {
+    return item.typeObject.WPM > 45 ? "run" : "walk";
+  }
+  return "idle";
+}
 
 interface RaceTrackProps {
   players: Array<[string, SharedMessage]>;
   myUser: string;
   roomParagraphLength: number;
   roomSize: number | null;
-  localImgCounts: Record<string, number>;
   playerStatsCache: Record<string, StatsDto>;
   assignedRanks: Record<string, string>;
   settledSenders: Set<string>;
@@ -31,12 +42,9 @@ function getPlayerProgress(item: SharedMessage, senderId: string, settledSenders
   return item.typeObject.charIndex;
 }
 
-function getPlayerSprite(
-  senderId: string,
-  item: SharedMessage,
-  localImgCounts: Record<string, number>,
-  assignedRanks: Record<string, string>
-) {
+// Returns a stable src for React to track. For animating players, always returns
+// frame 0 so React never fights the DOM-driven animation loop between renders.
+function getStaticSprite(senderId: string, item: SharedMessage, assignedRanks: Record<string, string>): string {
   if (item.typeObject.isCompleted) {
     return item.typeObject.mistakes === 0
       ? assignedRanks[senderId] ?? "/1st.png"
@@ -45,7 +53,7 @@ function getPlayerSprite(
 
   if (item.typeObject.isActivelyTyping && item.typeObject.mistakes === 0) {
     const frames = item.typeObject.WPM > 45 ? RUN_FRAMES : WALK_FRAMES;
-    return `/Character${item.characterNumber}${frames[localImgCounts[senderId] ?? 0]}`;
+    return `/Character${item.characterNumber}${frames[0]}`;
   }
 
   return `/Character${item.characterNumber}${IDLE_FRAME}`;
@@ -56,13 +64,24 @@ export function RaceTrack({
   myUser,
   roomParagraphLength,
   roomSize,
-  localImgCounts,
   playerStatsCache,
   assignedRanks,
   settledSenders,
   loadPlayerStats,
 }: RaceTrackProps) {
   const [hoveredPlayer, setHoveredPlayer] = useState<string | null>(null);
+
+  // DOM refs for direct frame updates — bypasses React render cycle entirely
+  const imgRefsRef = useRef<Record<string, HTMLImageElement | null>>({});
+  const frameCountersRef = useRef<Record<string, number>>({});
+  const lastFrameTimeRef = useRef<Record<string, number>>({});
+  const prevAnimTypeRef = useRef<Record<string, AnimType>>({});
+
+  // Always-current snapshot for the animation interval (no stale closure)
+  const playersRef = useRef(players);
+  const assignedRanksRef = useRef(assignedRanks);
+  playersRef.current = players;
+  assignedRanksRef.current = assignedRanks;
 
   useEffect(() => {
     const allFrames = [...WALK_FRAMES, ...RUN_FRAMES, IDLE_FRAME];
@@ -78,6 +97,51 @@ export function RaceTrack({
       images.length = 0;
     };
   }, []);
+
+  // When a player's animation state changes (server-driven), reset counters so
+  // the new animation starts cleanly from frame 0 with no carry-over delay.
+  useEffect(() => {
+    for (const [senderId, item] of players) {
+      const newType = getAnimType(item);
+      if (newType !== prevAnimTypeRef.current[senderId]) {
+        prevAnimTypeRef.current[senderId] = newType;
+        frameCountersRef.current[senderId] = 0;
+        lastFrameTimeRef.current[senderId] = 0;
+      }
+    }
+  }, [players]);
+
+  // Animation loop via requestAnimationFrame — runs every display frame (~16ms)
+  // but only advances a sprite when enough time has elapsed for that animation
+  // type (walk is slower than run). Completely decoupled from server updates.
+  useEffect(() => {
+    let rafId: number;
+
+    const animate = () => {
+      const now = Date.now();
+
+      for (const [senderId, item] of playersRef.current) {
+        const animType = prevAnimTypeRef.current[senderId];
+        if (animType !== "walk" && animType !== "run") continue;
+
+        const img = imgRefsRef.current[senderId];
+        if (!img) continue;
+
+        const targetMs = animType === "run" ? RUN_FRAME_MS : WALK_FRAME_MS;
+        if (now - (lastFrameTimeRef.current[senderId] ?? 0) < targetMs) continue;
+
+        lastFrameTimeRef.current[senderId] = now;
+        frameCountersRef.current[senderId] = ((frameCountersRef.current[senderId] ?? 0) + 1) % 10;
+        const frames = animType === "run" ? RUN_FRAMES : WALK_FRAMES;
+        img.src = `/Character${item.characterNumber}${frames[frameCountersRef.current[senderId]]}`;
+      }
+
+      rafId = requestAnimationFrame(animate);
+    };
+
+    rafId = requestAnimationFrame(animate);
+    return () => cancelAnimationFrame(rafId);
+  }, []); // No deps — this loop lives for the component lifetime
 
   return (
     <>
@@ -108,7 +172,8 @@ export function RaceTrack({
               >
                 <div className="race-track">
                   <img
-                    src={getPlayerSprite(senderId, item, localImgCounts, assignedRanks)}
+                    ref={(el) => { imgRefsRef.current[senderId] = el; }}
+                    src={getStaticSprite(senderId, item, assignedRanks)}
                     className={item.typeObject.isCompleted ? "rank-img" : "character-img"}
                     alt="moving"
                     style={{
