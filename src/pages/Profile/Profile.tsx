@@ -1,0 +1,100 @@
+import { useState, useEffect } from "react";
+import { Link } from "react-router-dom";
+import { useAuthContext } from "../../context/useAuthContext";
+import { useUserProfileContext } from "../../context/useUserProfileContext";
+import { LetterAvatar } from "../../components/LetterAvatar";
+import "./Profile.css";
+
+const COLOR_PALETTE = [
+  "#1a73e8", "#e91e63", "#009688", "#ff5722", "#9c27b0",
+  "#2196f3", "#ff9800", "#4caf50", "#795548", "#3f51b5",
+  "#00bcd4", "#f44336", "#8bc34a", "#ff5252", "#651fff",
+];
+
+function Profile() {
+  const { user } = useAuthContext();
+  const { profile, isSettingProfile, handleProfileSelection } = useUserProfileContext();
+
+  const [bio, setBio] = useState("");
+  const [selectedColor, setSelectedColor] = useState("");
+
+  useEffect(() => {
+    if (profile) {
+      setBio(profile.bio ?? "");
+      setSelectedColor(profile.avatar_color ?? "");
+    }
+  }, [profile]);
+
+  const username = user?.userName ?? "";
+  const previewColor = selectedColor || (profile?.avatar_color ?? undefined);
+
+  const handleSave = () => {
+    handleProfileSelection({
+      username,
+      bio: bio.trim() || null,
+      avatar_color: selectedColor || null,
+    });
+  };
+
+  return (
+    <div className="profile-page">
+      <div className="profile-container">
+        <div className="profile-topbar">
+          <Link to={`/user/${username}`} className="profile-view-public">
+            View public profile →
+          </Link>
+        </div>
+
+        <div className="profile-header">
+          <LetterAvatar username={username} avatarColor={previewColor} size={80} />
+          <div className="profile-header-info">
+            <h1 className="profile-username">{username}</h1>
+            <p className="profile-username-label">Username · cannot be changed</p>
+          </div>
+        </div>
+
+        <div className="profile-section">
+          <label className="profile-field-label" htmlFor="bio-input">Bio</label>
+          <textarea
+            id="bio-input"
+            className="profile-bio-input"
+            value={bio}
+            onChange={(e) => setBio(e.target.value)}
+            placeholder="Tell others a little about yourself…"
+            maxLength={200}
+          />
+          <span className="profile-char-count">{bio.length} / 200</span>
+        </div>
+
+        <div className="profile-section">
+          <label className="profile-field-label">Avatar Color</label>
+          <div className="profile-color-grid">
+            {COLOR_PALETTE.map((color) => (
+              <button
+                key={color}
+                className={`profile-color-swatch${selectedColor === color ? " selected" : ""}`}
+                style={{ backgroundColor: color }}
+                onClick={() => setSelectedColor(color)}
+                title={color}
+                type="button"
+              />
+            ))}
+          </div>
+        </div>
+
+        <div className="profile-actions">
+          <button
+            className="profile-save-btn"
+            onClick={handleSave}
+            disabled={isSettingProfile}
+            type="button"
+          >
+            {isSettingProfile ? "Saving…" : "Save Profile"}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export default Profile;

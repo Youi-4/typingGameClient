@@ -1,25 +1,28 @@
 import apiClient from "./apiClient";
 import type { UserProfile } from "../context/UserProfileContext";
 
+interface SessionUserResponse {
+  user: {
+    user: string;
+    bio: string | null;
+    avatar_color: string | null;
+  };
+}
+
 export const getProfileBySession = async (): Promise<UserProfile> => {
-  const response = await apiClient.post<UserProfile>("/user/profile/get/userBySession");
-  console.log("Profile by session response:", response);
-  console.log("Profile data:", response.data);
-  return response.data;
-};
-// Set/update the entire profile on the server
-export const setProfileOnServer = async (
-  selectedProfile: UserProfile
-): Promise<UserProfile> => {
-  console.log("Attempting to set profile:", selectedProfile);
-  const response = await apiClient.post("/user/profile/set", {
-    profile: selectedProfile,
-  });
-  return response.data;
+  const response = await apiClient.post<SessionUserResponse>("/user/profile/get/userBySession");
+  const { user } = response.data;
+  return {
+    username: user.user,
+    bio: user.bio ?? null,
+    avatar_color: user.avatar_color ?? null,
+  };
 };
 
-// Get the current user profile from the server
-export const getProfileFromServer = async (): Promise<UserProfile> => {
-  const response = await apiClient.post("/user/profile/get");
+export const setProfileOnServer = async (selectedProfile: UserProfile): Promise<UserProfile> => {
+  const response = await apiClient.post<UserProfile>("/user/profile/set", {
+    bio: selectedProfile.bio,
+    avatarColor: selectedProfile.avatar_color,
+  });
   return response.data;
 };

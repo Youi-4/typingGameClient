@@ -98,6 +98,17 @@
 .lb-rank.other  { color: var(--text-subtle); }
 
 .lb-username { font-weight: 700; color: var(--text-primary); }
+
+.lb-username-link {
+  color: var(--text-primary);
+  text-decoration: none;
+  font-weight: 700;
+  transition: color 0.15s;
+}
+
+.lb-username-link:hover {
+  color: var(--accent);
+}
 .lb-best     { color: var(--accent); }
 .lb-avg      { color: #6f42c1; }
 .lb-winrate  { color: #28a745; }

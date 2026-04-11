@@ -108,16 +108,13 @@
   background: none;
   cursor: pointer;
   transition: box-shadow 0.15s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .nav-avatar:hover {
   box-shadow: 0 0 0 2px var(--accent);
-}
-
-.nav-avatar img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
 }
 
 .nav-dropdown-wrap {
@@ -151,12 +148,25 @@
   border-radius: 0;
   text-align: left;
   cursor: pointer;
-  transition: background-color 0.15s;
+  text-decoration: none;
+  transition: background-color 0.15s, color 0.15s;
+  box-sizing: border-box;
 }
 
 .nav-dropdown-item:hover {
   background-color: var(--bg-surface-2);
   color: var(--accent);
+}
+
+.nav-dropdown-username {
+  opacity: 0.6;
+  cursor: default;
+  font-weight: 700;
+}
+
+.nav-dropdown-username:hover {
+  background-color: transparent;
+  color: var(--text-primary);
 }
 
 

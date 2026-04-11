@@ -10,6 +10,8 @@ import PublicRoute from "./utils/PublicRoute";
 import RootLayout from "./RootLayout";
 import Stats from "./pages/Stats/Stats";
 import Leaderboard from "./pages/Leaderboard/Leaderboard";
+import Profile from "./pages/Profile/Profile";
+import PublicProfile from "./pages/PublicProfile/PublicProfile";
 
 const router = createBrowserRouter([
   {
@@ -35,6 +37,11 @@ const router = createBrowserRouter([
       { path: "/Leaderboard", element: <Leaderboard /> },
       { path: "/Practice", element: <PracticeGame /> },
       { path: "/Play/:roomId", element: <TypingGameKeyed /> },
+      {
+        path: "/user/profile",
+        element: (<PrivateRoute><Profile /></PrivateRoute>),
+      },
+      { path: "/user/:username", element: <PublicProfile /> },
       {
         path: "*",
         element: (<PrivateRoute><NotFound /></PrivateRoute>),

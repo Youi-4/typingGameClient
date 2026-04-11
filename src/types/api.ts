@@ -84,3 +84,21 @@ export interface ApiError {
     };
   };
 }
+
+export interface PublicProfileStatsDto {
+  race_avg: number;
+  race_best: number;
+  race_won: number;
+  race_completed: number;
+}
+
+export interface PublicProfileDto {
+  username: string;
+  bio: string | null;
+  avatar_color: string | null;
+  stats: PublicProfileStatsDto;
+}
+
+export interface PublicProfileResponseDto {
+  profile: PublicProfileDto;
+}

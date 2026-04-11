@@ -1,6 +1,7 @@
 import React from "react";
 import type { ReactNode } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import toast from "react-hot-toast";
 import {
   setProfileOnServer,
   getProfileBySession
@@ -30,7 +31,10 @@ export const UserProfileProvider: React.FC<UserProfileProviderProps> = ({
     mutationFn: setProfileOnServer,
     onSuccess: (updatedProfile) => {
       queryClient.setQueryData(["userProfile"], updatedProfile);
-      console.log("Profile set successfully on server");
+      toast.success("Profile saved!");
+    },
+    onError: () => {
+      toast.error("Failed to save profile.");
     },
   });
 
@@ -39,11 +43,7 @@ export const UserProfileProvider: React.FC<UserProfileProviderProps> = ({
   const profile = profileQuery.data ?? null;
 
   const handleProfileSelection = (selectedProfile: UserProfile): void => {
-    mutation.mutate(selectedProfile, {
-      onError: (error: unknown) => {
-        console.error("Error setting profile on server:", error);
-      },
-    });
+    mutation.mutate(selectedProfile);
   };
 
   return (

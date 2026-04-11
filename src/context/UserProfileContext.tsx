@@ -1,7 +1,9 @@
 import { createContext } from "react";
 
 export interface UserProfile {
-  [key: string]: unknown;
+  username: string;
+  bio: string | null;
+  avatar_color: string | null;
 }
 
 export interface UserProfileContextValue {

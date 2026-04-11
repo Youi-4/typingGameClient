@@ -3,6 +3,8 @@ import type {
   CreateRoomResponseDto,
   LeaderboardEntryDto,
   LeaderboardResponseDto,
+  PublicProfileDto,
+  PublicProfileResponseDto,
   StatsDto,
   StatsResponseDto,
 } from "../types/api";
@@ -39,5 +41,12 @@ export async function getStatsByUsername(username: string): Promise<StatsDto> {
 export async function getLeaderboard(): Promise<LeaderboardEntryDto[]> {
   const response = await apiClient.get<LeaderboardResponseDto>("/user/profile/leaderboard");
   return response.data.leaderboard;
+}
+
+export async function getPublicProfile(username: string): Promise<PublicProfileDto> {
+  const response = await apiClient.get<PublicProfileResponseDto>(
+    `/user/profile/public/${encodeURIComponent(username)}`
+  );
+  return response.data.profile;
 }
 

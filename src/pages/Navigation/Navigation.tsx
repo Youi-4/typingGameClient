@@ -1,13 +1,16 @@
-import { Bell, Sun, Moon, LogOut } from 'lucide-react';
+import { Sun, Moon, LogOut, User } from 'lucide-react';
 import { useLocation, Link, useNavigate } from 'react-router-dom';
 import { useRef, useState, useEffect } from 'react';
 import { useAuthContext } from '../../context/useAuthContext';
 import { useTheme } from '../../context/useTheme';
+import { useUserProfileContext } from '../../context/useUserProfileContext';
+import { LetterAvatar } from '../../components/LetterAvatar';
 import './Navigation.css';
 
 function Navigation() {
   const { isAuthenticated, user, logout } = useAuthContext();
   const { theme, toggleTheme } = useTheme();
+  const { profile } = useUserProfileContext();
   const { pathname } = useLocation();
   const navigate = useNavigate();
   const [dropdownOpen, setDropdownOpen] = useState(false);
@@ -48,34 +51,37 @@ function Navigation() {
           </button>
 
           {isAuthenticated ? (
-            <>
-              <button className="nav-icon-btn">
-                <Bell size={20} />
+            <div className="nav-dropdown-wrap" ref={dropdownRef}>
+              <button className="nav-avatar" onClick={() => setDropdownOpen(o => !o)} title="Account">
+                <LetterAvatar
+                  username={user?.userName ?? 'U'}
+                  avatarColor={profile?.avatar_color}
+                  size={36}
+                />
               </button>
 
-              <div className="nav-dropdown-wrap" ref={dropdownRef}>
-                <button className="nav-avatar" onClick={() => setDropdownOpen(o => !o)}>
-                  <img
-                    src={`https://ui-avatars.com/api/?name=${encodeURIComponent(user?.userName ?? 'U')}&background=1a73e8&color=fff&bold=true`}
-                    alt="Profile"
-                  />
-                </button>
-
-                {dropdownOpen && (
-                  <div className="nav-dropdown">
-                    {user?.userName && (
-                      <div className="nav-dropdown-item" style={{ opacity: 0.6, cursor: 'default', fontWeight: 700 }}>
-                        {user.userName}
-                      </div>
-                    )}
-                    <button className="nav-dropdown-item" onClick={handleLogout}>
-                      <LogOut size={15} />
-                      Log out
-                    </button>
-                  </div>
-                )}
-              </div>
-            </>
+              {dropdownOpen && (
+                <div className="nav-dropdown">
+                  {user?.userName && (
+                    <div className="nav-dropdown-item nav-dropdown-username">
+                      {user.userName}
+                    </div>
+                  )}
+                  <Link
+                    to="/user/profile"
+                    className="nav-dropdown-item"
+                    onClick={() => setDropdownOpen(false)}
+                  >
+                    <User size={15} />
+                    My Profile
+                  </Link>
+                  <button className="nav-dropdown-item" onClick={handleLogout}>
+                    <LogOut size={15} />
+                    Log out
+                  </button>
+                </div>
+              )}
+            </div>
           ) : (
             <>
               <Link to="/SignUp" className="nav-btn">Sign up</Link>

@@ -1,4 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
+import { Link } from 'react-router-dom';
 import { getLeaderboard } from '../../services/apiGeneral';
 import './Leaderboard.css';
 
@@ -53,7 +54,11 @@ function Leaderboard() {
                         {i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : i + 1}
                       </span>
                     </td>
-                    <td className="lb-username">{p.username}</td>
+                    <td className="lb-username">
+                      <Link to={`/user/${encodeURIComponent(p.username)}`} className="lb-username-link">
+                        {p.username}
+                      </Link>
+                    </td>
                     <td className="right lb-best">{p.race_best}</td>
                     <td className="right lb-avg">{Math.round(p.race_avg)}</td>
                     <td className="right lb-winrate">{winRate}%</td>

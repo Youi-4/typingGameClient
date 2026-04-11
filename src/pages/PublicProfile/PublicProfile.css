@@ -1,0 +1,158 @@
+.pubprofile-page {
+  min-height: 100vh;
+  background-color: var(--bg-page);
+  padding: 96px 24px 64px;
+  box-sizing: border-box;
+  font-family: system-ui, sans-serif;
+  transition: background-color 0.2s;
+}
+
+.pubprofile-container {
+  max-width: 560px;
+  margin: 0 auto;
+}
+
+.pubprofile-card {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-color);
+  border-radius: 18px;
+  overflow: hidden;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.09);
+  transition: background-color 0.2s, border-color 0.2s;
+}
+
+.pubprofile-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 20px;
+  padding: 32px 28px 24px;
+}
+
+.pubprofile-header-info {
+  text-align: left;
+  flex: 1;
+}
+
+.pubprofile-username {
+  font-size: 28px;
+  font-weight: 800;
+  color: var(--text-primary);
+  margin: 0 0 8px;
+  letter-spacing: -0.03em;
+}
+
+.pubprofile-bio {
+  font-size: 14px;
+  color: var(--text-muted);
+  margin: 0;
+  line-height: 1.6;
+}
+
+.pubprofile-bio--empty {
+  font-style: italic;
+  color: var(--text-subtle);
+}
+
+.pubprofile-divider {
+  height: 1px;
+  background: var(--border-color);
+  margin: 0 28px;
+  transition: background-color 0.2s;
+}
+
+.pubprofile-stats {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  padding: 24px 28px;
+  gap: 12px;
+}
+
+.pubprofile-stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.pubprofile-stat-value {
+  font-size: 28px;
+  font-weight: 800;
+  color: var(--accent);
+  font-family: "Noto Sans Mono", monospace;
+  line-height: 1;
+}
+
+.pubprofile-stat-label {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-subtle);
+  text-align: center;
+}
+
+.pubprofile-actions {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-top: 20px;
+  flex-wrap: wrap;
+}
+
+.pubprofile-race-btn {
+  display: inline-block;
+  background-color: var(--accent);
+  color: #fff;
+  text-decoration: none;
+  padding: 12px 22px;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 700;
+  transition: background-color 0.15s;
+}
+
+.pubprofile-race-btn:hover {
+  background-color: var(--accent-hover);
+  color: #fff;
+}
+
+.pubprofile-lb-link {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-decoration: none;
+  transition: color 0.15s;
+}
+
+.pubprofile-lb-link:hover {
+  color: var(--accent);
+}
+
+.pubprofile-loading,
+.pubprofile-error {
+  text-align: center;
+  padding: 80px 24px;
+  color: var(--text-muted);
+  font-size: 15px;
+}
+
+.pubprofile-error {
+  color: #d73a49;
+}
+
+@media (max-width: 520px) {
+  .pubprofile-stats {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px;
+  }
+
+  .pubprofile-header {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+  }
+
+  .pubprofile-header-info {
+    text-align: center;
+  }
+}
