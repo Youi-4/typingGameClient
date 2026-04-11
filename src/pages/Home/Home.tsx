@@ -118,9 +118,9 @@ function Home() {
               value={roomSizeInput}
               onChange={(e) => setRoomSizeInput(Number(e.target.value))}
             >
-              {Array.from({ length: 5 }, (_, i) => (
-                <option key={i + 1} value={i + 1}>
-                  {i + 1}
+              {Array.from({ length: 4 }, (_, i) => (
+                <option key={i + 2} value={i + 2}>
+                  {i + 2}
                 </option>
               ))}
             </select>

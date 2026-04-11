@@ -1,16 +1,25 @@
 import { test, expect, type BrowserContext, type Page } from "@playwright/test";
 
+async function openPrivateSection(page: Page) {
+  const setupBtn = page.getByRole("button", { name: /Set up/i });
+  if (await setupBtn.isVisible()) {
+    await setupBtn.click();
+  }
+}
+
 async function waitForGeneratedRoomCode(page: Page) {
+  await openPrivateSection(page);
   await expect
     .poll(async () => {
-      const hintText = (await page.locator(".lobby-hint").textContent()) ?? "";
+      const hintText = (await page.locator(".private-hint").textContent()) ?? "";
       return hintText.replace("Room code:", "").trim();
     })
-    .not.toBe("");
+    .not.toBe("generating…");
 }
 
 async function createPrivateLobby(page: Page, size: number) {
   await page.goto("/Home");
+  await openPrivateSection(page);
   await waitForGeneratedRoomCode(page);
   await page.getByLabel("Players:").selectOption(String(size));
   await page.getByRole("button", { name: "Create lobby" }).click();
@@ -20,6 +29,7 @@ async function createPrivateLobby(page: Page, size: number) {
 
 async function joinPrivateLobby(page: Page, lobbyCode: string) {
   await page.goto("/Home");
+  await openPrivateSection(page);
   await page.getByRole("textbox", { name: "room code" }).fill(lobbyCode);
   await page.getByRole("button", { name: "Join lobby" }).click();
   await expect(page).toHaveURL(new RegExp(`/Play/${lobbyCode}$`));
@@ -50,8 +60,16 @@ async function closePlayerSessions(players: Page[], contexts: BrowserContext[]) 
   await Promise.allSettled(contexts.map((context) => context.close()));
 }
 
-test("home page loads and can create a lobby", async ({ page }) => {
+test("home page loads and shows mode cards", async ({ page }) => {
   await page.goto("/Home");
+  await expect(page.getByRole("button", { name: /Join a race/i })).toBeVisible();
+  await expect(page.getByRole("button", { name: /Start practicing/i })).toBeVisible();
+  await expect(page.getByRole("button", { name: /Set up/i })).toBeVisible();
+});
+
+test("home page can open private section and create a lobby", async ({ page }) => {
+  await page.goto("/Home");
+  await openPrivateSection(page);
   await expect(page.getByRole("button", { name: "Create lobby" })).toBeVisible();
 });
 
@@ -267,28 +285,9 @@ test("theme toggle switches between light and dark", async ({ page }) => {
 
 
 
-test("Single player game", async ({ page }) => {
-  await page.goto('/Home');
-  await page.getByRole('button', { name: 'Create lobby' }).click();
-  await page.locator('#paragraph').waitFor({ state: 'visible' });
-  await page.locator('#paragraph').click();
-  const paragraphText = await page.locator('#paragraph').innerText();
-
-  for (let i = 0; i < 10; i++) {
-    const disabled = await page.locator('#game-input-field').isDisabled();
-    if (!disabled) break;
-    await page.waitForTimeout(1000);
-  }
-
-  await page.locator('#game-input-field').pressSequentially(paragraphText!, { delay: 50 });
-  await expect(page.locator('.rank-img')).not.toHaveAttribute('src', /Idle/, { timeout: 5000 });
-});
-
-
-
-
 test("Play Again button appears after finishing single player game", async ({ page }) => {
   await page.goto('/Home');
+  await openPrivateSection(page);
   await page.getByRole('button', { name: 'Create lobby' }).click();
   await page.locator('#paragraph').waitFor({ state: 'visible' });
   const paragraphText = await page.locator('#paragraph').innerText();
@@ -311,10 +310,10 @@ test("Public game with two players", async ({ browser }) => {
   const players = await Promise.all(contexts.map(ctx => ctx.newPage()));
 
   await players[0].goto('/Home');
-  await players[0].getByRole('button', { name: 'Join online game' }).click();
+  await players[0].getByRole('button', { name: 'Join a race →' }).click();
 
   await players[1].goto('/Home');
-  await players[1].getByRole('button', { name: 'Join online game' }).click();
+  await players[1].getByRole('button', { name: 'Join a race →' }).click();
 
   await players[0].locator('#paragraph').waitFor({ state: 'visible' });
   await players[1].locator('#paragraph').waitFor({ state: 'visible' });
@@ -483,6 +482,7 @@ test("Play Again and results appear when timer expires before player finishes ty
 
   // Start a single-player game
   await page.goto('/Home');
+  await openPrivateSection(page);
   await page.getByRole('button', { name: 'Create lobby' }).click();
   await page.locator('#paragraph').waitFor({ state: 'visible' });
 
@@ -560,9 +560,7 @@ test("A player can join a new private lobby after leaving a previous one", async
   await expect(returningPlayerPage).toHaveURL(/\/Home$/);
 
   const secondLobbyCode = await createPrivateLobby(secondHostPage, 2);
-  await returningPlayerPage.getByRole("textbox", { name: "room code" }).fill(secondLobbyCode);
-  await returningPlayerPage.getByRole("button", { name: "Join lobby" }).click();
-  await expect(returningPlayerPage).toHaveURL(new RegExp(`/Play/${secondLobbyCode}$`));
+  await joinPrivateLobby(returningPlayerPage, secondLobbyCode);
 
   await Promise.all([
     waitForPlayerPanels(secondHostPage, 2),
@@ -617,4 +615,74 @@ test("A host can create a new private lobby after leaving a previous one", async
 
   await Promise.all([returningHostPage.close(), firstGuestPage.close(), secondGuestPage.close()]);
   await Promise.all(contexts.map(c => c.close()));
+});
+
+
+
+// ── Practice mode ────────────────────────────────────────────────────────────
+
+test("Practice button navigates to /Practice", async ({ page }) => {
+  await page.goto("/Home");
+  await page.getByRole("button", { name: /Start practicing/i }).click();
+  await expect(page).toHaveURL(/\/Practice$/);
+});
+
+test("practice page shows paragraph text immediately with no countdown", async ({ page }) => {
+  await page.goto("/Practice");
+  await expect(page.locator("#paragraph")).toBeVisible();
+  // Input is enabled straight away — no countdown to wait through
+  await expect(page.locator("#game-input-field")).toBeEnabled();
+});
+
+test("practice page shows elapsed timer label 'Time:'", async ({ page }) => {
+  await page.goto("/Practice");
+  await expect(page.locator(".time p")).toHaveText("Time:");
+});
+
+test("practice page timer counts up from 0", async ({ page }) => {
+  await page.goto("/Practice");
+  // Initially 0
+  await expect(page.locator(".time b")).toHaveText("0");
+  // After a couple of seconds the counter has advanced
+  await page.waitForTimeout(3000);
+  const elapsed = Number(await page.locator(".time b").innerText());
+  expect(elapsed).toBeGreaterThanOrEqual(1);
+});
+
+test("practice mode: typing shows Play Again after completing the paragraph", async ({ page }) => {
+  await page.goto("/Practice");
+  await expect(page.locator("#game-input-field")).toBeEnabled();
+  const paragraphText = await page.locator("#paragraph").innerText();
+  await page.locator("#game-input-field").pressSequentially(paragraphText, { delay: 20 });
+  await expect(page.getByRole("button", { name: "Play Again" })).toBeVisible({ timeout: 5000 });
+});
+
+test("practice mode: character disappears from race track on completion", async ({ page }) => {
+  await page.goto("/Practice");
+  await expect(page.locator("#game-input-field")).toBeEnabled();
+  const paragraphText = await page.locator("#paragraph").innerText();
+  await page.locator("#game-input-field").pressSequentially(paragraphText, { delay: 20 });
+  // hideCharacterOnComplete removes both character-img and rank-img
+  await expect(page.locator(".character-img")).toHaveCount(0, { timeout: 5000 });
+  await expect(page.locator(".rank-img")).toHaveCount(0, { timeout: 5000 });
+});
+
+test("practice mode: Play Again loads a new paragraph", async ({ page }) => {
+  await page.goto("/Practice");
+  await expect(page.locator("#game-input-field")).toBeEnabled();
+  const firstParagraph = await page.locator("#paragraph").innerText();
+  await page.locator("#game-input-field").pressSequentially(firstParagraph, { delay: 20 });
+  await page.getByRole("button", { name: "Play Again" }).click();
+  // After reset no char should be marked correct
+  const correctCount = await page.locator(".char.correct").count();
+  expect(correctCount).toBe(0);
+});
+
+test("practice mode: timer does not end the game at 60 seconds", async ({ page }) => {
+  test.setTimeout(75000);
+  await page.goto("/Practice");
+  // Wait past the normal 60 s game limit without typing
+  await page.waitForTimeout(62000);
+  // Play Again should NOT appear — practice has no time limit
+  await expect(page.getByRole("button", { name: "Play Again" })).not.toBeVisible();
 });

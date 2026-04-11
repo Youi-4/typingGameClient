@@ -1,4 +1,4 @@
-import { render, screen, fireEvent, act, cleanup } from "@testing-library/react";
+import { render, renderHook, screen, fireEvent, act, cleanup } from "@testing-library/react";
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import { useTypingRace } from "./useTypingRace";
 import type { TypeObject } from "../../context/SharedSpaceContext";
@@ -12,11 +12,13 @@ let sendSharedData: ReturnType<typeof vi.fn<(t: TypeObject) => void>>;
 function TestHarness({
   roomParagraph,
   isInputDisabled = false,
+  practiceMode = false,
 }: {
   roomParagraph: string;
   isInputDisabled?: boolean;
+  practiceMode?: boolean;
 }) {
-  const race = useTypingRace({ roomParagraph, isInputDisabled, sendSharedData });
+  const race = useTypingRace({ roomParagraph, isInputDisabled, sendSharedData, practiceMode });
 
   return (
     <div>
@@ -33,6 +35,7 @@ function TestHarness({
       <div data-testid="time-left">{race.timeLeft}</div>
       <div data-testid="completed">{String(race.isCompleted)}</div>
       <div data-testid="accuracy">{race.accuracy}</div>
+      <div data-testid="snapshot-char-index">{race.snapshot.charIndex}</div>
     </div>
   );
 }
@@ -242,5 +245,96 @@ describe("useTypingRace", () => {
     expect(firstCall.charIndex).toBe(0);
     expect(firstCall.isCompleted).toBe(false);
     expect(firstCall.WPM).toBe(0);
+  });
+});
+
+// ── practiceMode ────────────────────────────────────────────────────────────
+
+describe("useTypingRace — practiceMode", () => {
+  beforeEach(() => {
+    vi.useFakeTimers({
+      toFake: ['setTimeout', 'clearTimeout', 'setInterval', 'clearInterval', 'Date'],
+    });
+    sendSharedData = vi.fn();
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+    cleanup();
+  });
+
+  it("initializes timeLeft at 0 (elapsed) instead of 60", () => {
+    render(<TestHarness roomParagraph="hello" practiceMode />);
+    expect(screen.getByTestId("time-left").textContent).toBe("0");
+  });
+
+  it("counts up each second rather than down", () => {
+    render(<TestHarness roomParagraph="hello" practiceMode />);
+
+    act(() => { vi.advanceTimersByTime(1000); });
+    expect(screen.getByTestId("time-left").textContent).toBe("1");
+
+    act(() => { vi.advanceTimersByTime(1000); });
+    expect(screen.getByTestId("time-left").textContent).toBe("2");
+  });
+
+  it("allows typing immediately even when timeLeft is 0", () => {
+    render(<TestHarness roomParagraph="hi" practiceMode />);
+    expect(screen.getByTestId("time-left").textContent).toBe("0");
+
+    fireEvent.change(screen.getByTestId("game-input"), { target: { value: "h" } });
+
+    expect(chars()[0].classList.contains("correct")).toBe(true);
+  });
+
+  it("still completes after more than 60 seconds have elapsed", () => {
+    render(<TestHarness roomParagraph="hi" practiceMode />);
+
+    act(() => { vi.advanceTimersByTime(120_000); }); // 2 minutes — past normal time limit
+
+    fireEvent.change(screen.getByTestId("game-input"), { target: { value: "h" } });
+    fireEvent.change(screen.getByTestId("game-input"), { target: { value: "i" } });
+
+    expect(screen.getByTestId("completed").textContent).toBe("true");
+  });
+});
+
+// ── snapshot ─────────────────────────────────────────────────────────────────
+
+describe("useTypingRace — snapshot", () => {
+  beforeEach(() => {
+    vi.useFakeTimers({
+      toFake: ['setTimeout', 'clearTimeout', 'setInterval', 'clearInterval', 'Date'],
+    });
+    sendSharedData = vi.fn();
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+    cleanup();
+  });
+
+  it("returns snapshot with correct initial shape", () => {
+    const { result } = renderHook(() =>
+      useTypingRace({ roomParagraph: "hi", isInputDisabled: false, sendSharedData })
+    );
+
+    expect(result.current.snapshot).toEqual({
+      charIndex: 0,
+      charIndexBeforeMistake: 0,
+      isActivelyTyping: false,
+      isCompleted: false,
+      mistakes: 0,
+      totalMistakes: 0,
+      WPM: 0,
+    });
+  });
+
+  it("snapshot.charIndex updates after each correct keystroke", () => {
+    render(<TestHarness roomParagraph="hi" />);
+    expect(screen.getByTestId("snapshot-char-index").textContent).toBe("0");
+
+    fireEvent.change(screen.getByTestId("game-input"), { target: { value: "h" } });
+    expect(screen.getByTestId("snapshot-char-index").textContent).toBe("1");
   });
 });
