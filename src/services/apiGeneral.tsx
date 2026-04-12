@@ -5,6 +5,8 @@ import type {
   LeaderboardResponseDto,
   PublicProfileDto,
   PublicProfileResponseDto,
+  RaceHistoryEntryDto,
+  RaceHistoryResponseDto,
   StatsDto,
   StatsResponseDto,
 } from "../types/api";
@@ -48,5 +50,14 @@ export async function getPublicProfile(username: string): Promise<PublicProfileD
     `/user/profile/public/${encodeURIComponent(username)}`
   );
   return response.data.profile;
+}
+
+export async function saveRaceHistory(wpm: number, accuracy: number, mode: string): Promise<void> {
+  await apiClient.post("/user/profile/raceHistory", { wpm, accuracy, mode });
+}
+
+export async function getRaceHistory(): Promise<RaceHistoryEntryDto[]> {
+  const response = await apiClient.get<RaceHistoryResponseDto>("/user/profile/raceHistory");
+  return response.data.history;
 }
 

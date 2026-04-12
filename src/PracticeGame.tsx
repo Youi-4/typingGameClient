@@ -1,10 +1,13 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 
 import "./styles.css";
+import { useAuthContext } from "./context/useAuthContext";
 import { RaceTrack } from "./features/typing-game/RaceTrack";
 import { ResultsPanel } from "./features/typing-game/ResultsPanel";
 import { getRandomPracticeText } from "./features/typing-game/practiceTexts";
 import { useTypingRace } from "./features/typing-game/useTypingRace";
+import { saveRaceHistory } from "./services/apiGeneral";
 import type { TypeObject } from "./context/SharedSpaceContext";
 
 const SOLO_ID = "solo";
@@ -23,6 +26,18 @@ function PracticeRound({ paragraph, characterNumber, onPlayAgain }: PracticeRoun
     sendSharedData: noop,
     practiceMode: true,
   });
+
+  const { user } = useAuthContext();
+  const queryClient = useQueryClient();
+  const savedRef = useRef(false);
+
+  useEffect(() => {
+    if (!race.isCompleted || savedRef.current || !user) return;
+    savedRef.current = true;
+    saveRaceHistory(race.wpm, race.accuracy, 'practice')
+      .then(() => queryClient.invalidateQueries({ queryKey: ['raceHistory'] }))
+      .catch(console.error);
+  }, [race.isCompleted, race.wpm, race.accuracy, user, queryClient]);
 
   const players: Array<[string, { senderId: string; senderName: string; characterNumber: number; message: string; typeObject: TypeObject }]> = [
     [

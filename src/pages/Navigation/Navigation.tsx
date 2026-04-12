@@ -1,9 +1,11 @@
-import { Sun, Moon, LogOut, User } from 'lucide-react';
+import { Sun, Moon, LogOut, User, Bell } from 'lucide-react';
 import { useLocation, Link, useNavigate } from 'react-router-dom';
 import { useRef, useState, useEffect } from 'react';
 import { useAuthContext } from '../../context/useAuthContext';
 import { useTheme } from '../../context/useTheme';
 import { useUserProfileContext } from '../../context/useUserProfileContext';
+import { useNotifications } from '../../context/useNotifications';
+import { useSharedSpace } from '../../context/useSharedSpace';
 import { LetterAvatar } from '../../components/LetterAvatar';
 import './Navigation.css';
 
@@ -13,20 +15,52 @@ function Navigation() {
   const { profile } = useUserProfileContext();
   const { pathname } = useLocation();
   const navigate = useNavigate();
+
   const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [notifOpen, setNotifOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const notifRef = useRef<HTMLDivElement>(null);
 
-  const active = (path: string) => pathname.toLowerCase().startsWith(path.toLowerCase()) ? 'active' : '';
+  const { incomingChallenge, respondToChallenge } = useNotifications();
+  const { setNamespace, setRoomId, setRoomSize, setIsChallenge } = useSharedSpace();
 
+  const active = (path: string) =>
+    pathname.toLowerCase().startsWith(path.toLowerCase()) ? 'active' : '';
+
+  // Close dropdowns on outside click
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
       if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
         setDropdownOpen(false);
       }
+      if (notifRef.current && !notifRef.current.contains(e.target as Node)) {
+        setNotifOpen(false);
+      }
     };
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
+
+  // Auto-open the notification dropdown when a challenge arrives
+  useEffect(() => {
+    if (incomingChallenge) setNotifOpen(true);
+  }, [incomingChallenge]);
+
+  const handleAccept = () => {
+    if (!incomingChallenge) return;
+    setNotifOpen(false);
+    setNamespace("/private_game");
+    setRoomSize(2);
+    setIsChallenge(true);
+    setRoomId(incomingChallenge.roomId);
+    respondToChallenge(true);
+    navigate(`/Play/${incomingChallenge.roomId}`);
+  };
+
+  const handleDecline = () => {
+    setNotifOpen(false);
+    respondToChallenge(false);
+  };
 
   const handleLogout = async () => {
     setDropdownOpen(false);
@@ -46,13 +80,58 @@ function Navigation() {
         </ul>
 
         <div className="nav-actions">
-          <button className="nav-icon-btn" onClick={toggleTheme} title={theme === 'light' ? 'Dark mode' : 'Light mode'}>
+          <button
+            className="nav-icon-btn"
+            onClick={toggleTheme}
+            title={theme === 'light' ? 'Dark mode' : 'Light mode'}
+          >
             {theme === 'light' ? <Moon size={20} /> : <Sun size={20} />}
           </button>
 
+          {isAuthenticated && (
+            <div className="nav-notif-wrap" ref={notifRef}>
+              <button
+                className="nav-icon-btn nav-notif-btn"
+                onClick={() => setNotifOpen(o => !o)}
+                title="Notifications"
+                aria-label={incomingChallenge ? '1 new notification' : 'Notifications'}
+              >
+                <Bell size={20} />
+                {incomingChallenge && <span className="nav-notif-badge" />}
+              </button>
+
+              {notifOpen && (
+                <div className="nav-notif-dropdown">
+                  <p className="nav-notif-heading">Notifications</p>
+                  {incomingChallenge ? (
+                    <div className="nav-notif-item">
+                      <p className="nav-notif-text">
+                        <strong>{incomingChallenge.fromUsername}</strong> challenged you to a race!
+                      </p>
+                      <div className="nav-notif-actions">
+                        <button className="notif-btn notif-btn--accept" onClick={handleAccept}>
+                          Accept
+                        </button>
+                        <button className="notif-btn notif-btn--decline" onClick={handleDecline}>
+                          Decline
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <p className="nav-notif-empty">No new notifications.</p>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
+
           {isAuthenticated ? (
             <div className="nav-dropdown-wrap" ref={dropdownRef}>
-              <button className="nav-avatar" onClick={() => setDropdownOpen(o => !o)} title="Account">
+              <button
+                className="nav-avatar"
+                onClick={() => setDropdownOpen(o => !o)}
+                title="Account"
+              >
                 <LetterAvatar
                   username={user?.userName ?? 'U'}
                   avatarColor={profile?.avatar_color}

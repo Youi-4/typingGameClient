@@ -1,15 +1,24 @@
+import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { getStats } from '../../services/apiGeneral';
+import { getRaceHistory, getStats } from '../../services/apiGeneral';
 import { useAuthContext } from '../../context/useAuthContext';
+import WpmHistoryChart from '../../components/WpmHistoryChart';
 import './Stats.css';
 
 function Stats() {
   const { user } = useAuthContext();
+  const [modeFilter, setModeFilter] = useState<'all' | 'multiplayer' | 'practice' | 'challenge'>('all');
 
   const { data: stats, isLoading, isError } = useQuery({
     queryKey: ['stats'],
     queryFn: getStats,
     enabled: true,
+  });
+
+  const { data: history = [] } = useQuery({
+    queryKey: ['raceHistory'],
+    queryFn: getRaceHistory,
+    refetchOnMount: 'always',
   });
 
   if (isLoading) {
@@ -129,6 +138,52 @@ function Stats() {
             </div>
             <span className="wpm-row-value">{last}</span>
           </div>
+        </div>
+
+        {/* WPM progression chart */}
+        <div className="history-section">
+          <div className="history-header">
+            <p className="history-title">WPM Progression</p>
+            <div className="history-filters">
+              {(['all', 'multiplayer', 'practice', 'challenge'] as const).map(f => (
+                <button
+                  key={f}
+                  className={`history-filter-btn${modeFilter === f ? ' active' : ''}`}
+                  onClick={() => setModeFilter(f)}
+                >
+                  {f === 'all' ? 'All' : f.charAt(0).toUpperCase() + f.slice(1)}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {(() => {
+            const filtered = modeFilter === 'all'
+              ? history
+              : history.filter(h => h.mode === modeFilter);
+
+            if (filtered.length === 0) {
+              return (
+                <p className="history-empty">
+                  No races yet{modeFilter !== 'all' ? ` in ${modeFilter} mode` : ''}. Complete a race to see your progression.
+                </p>
+              );
+            }
+
+            return (
+              <>
+                <WpmHistoryChart data={filtered} />
+                <div className="history-legend">
+                  <span className="history-legend-dot multiplayer" />
+                  <span className="history-legend-label">Multiplayer</span>
+                  <span className="history-legend-dot practice" />
+                  <span className="history-legend-label">Practice</span>
+                  <span className="history-legend-dot challenge" />
+                  <span className="history-legend-label">Challenge</span>
+                </div>
+              </>
+            );
+          })()}
         </div>
       </div>
     </div>

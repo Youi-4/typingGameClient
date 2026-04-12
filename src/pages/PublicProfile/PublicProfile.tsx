@@ -1,11 +1,20 @@
-import { useParams, Link } from "react-router-dom";
+import { useParams, Link, useNavigate } from "react-router-dom";
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { getPublicProfile } from "../../services/apiGeneral";
+import { getPublicProfile, createRoom } from "../../services/apiGeneral";
 import { LetterAvatar } from "../../components/LetterAvatar";
+import { useAuthContext } from "../../context/useAuthContext";
+import { useNotifications } from "../../context/useNotifications";
+import { useSharedSpace } from "../../context/useSharedSpace";
 import "./PublicProfile.css";
 
 function PublicProfile() {
   const { username } = useParams<{ username: string }>();
+  const { isAuthenticated, user } = useAuthContext();
+  const { sendChallenge, pendingChallengeTarget } = useNotifications();
+  const { setNamespace, setRoomId, setRoomSize, setIsChallenge } = useSharedSpace();
+  const navigate = useNavigate();
+  const [challenging, setChallenging] = useState(false);
 
   const { data: profileData, isLoading, isError } = useQuery({
     queryKey: ["publicProfile", username],
@@ -34,6 +43,25 @@ function PublicProfile() {
     stats.race_completed > 0
       ? Math.round((stats.race_won / stats.race_completed) * 100)
       : 0;
+
+  const isSelf = isAuthenticated && user?.userName === profileData.username;
+
+  const handleChallenge = async () => {
+    setChallenging(true);
+    try {
+      const roomId = await createRoom("private");
+      setNamespace("/private_game");
+      setRoomSize(2);
+      setIsChallenge(true);
+      setRoomId(roomId);
+      sendChallenge(profileData.username, roomId);
+      navigate(`/Play/${roomId}`);
+    } catch {
+      setChallenging(false);
+    }
+  };
+
+  const isPending = pendingChallengeTarget === profileData.username;
 
   return (
     <div className="pubprofile-page">
@@ -78,9 +106,19 @@ function PublicProfile() {
         </div>
 
         <div className="pubprofile-actions">
-          <Link to="/Home" className="pubprofile-race-btn">
-            Race against {profileData.username} →
-          </Link>
+          {isAuthenticated && !isSelf ? (
+            <button
+              className="pubprofile-race-btn"
+              onClick={handleChallenge}
+              disabled={challenging || !!pendingChallengeTarget}
+            >
+              {isPending ? "Waiting for response…" : `Race against ${profileData.username} →`}
+            </button>
+          ) : !isAuthenticated ? (
+            <Link to="/Login" className="pubprofile-race-btn">
+              Log in to challenge {profileData.username} →
+            </Link>
+          ) : null}
           <Link to="/Leaderboard" className="pubprofile-lb-link">
             View leaderboard
           </Link>

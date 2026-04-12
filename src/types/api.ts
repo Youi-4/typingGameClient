@@ -102,3 +102,14 @@ export interface PublicProfileDto {
 export interface PublicProfileResponseDto {
   profile: PublicProfileDto;
 }
+
+export interface RaceHistoryEntryDto {
+  wpm: number;
+  accuracy: number;
+  mode: string;
+  created_at: string;
+}
+
+export interface RaceHistoryResponseDto {
+  history: RaceHistoryEntryDto[];
+}

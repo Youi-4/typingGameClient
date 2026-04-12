@@ -5,6 +5,7 @@ import { ThemeProvider } from "./context/ThemeProvider";
 import { UserProfileProvider } from "./context/UserProfileProvider";
 import { SharedSpaceProvider } from "./context/SharedSpaceProvider";
 import { ErrorBoundary } from "./components/ErrorBoundary";
+import { NotificationProvider } from "./context/NotificationProvider";
 import {
   QueryClient,
   QueryClientProvider,
@@ -19,12 +20,14 @@ function App() {
         <ThemeProvider>
           <AuthProvider>
             <UserProfileProvider>
+              <NotificationProvider>
               <SharedSpaceProvider>
                 <ErrorBoundary>
                   <AppRouter />
                 </ErrorBoundary>
                 <ReactQueryDevtools initialIsOpen={false} />
               </SharedSpaceProvider>
+              </NotificationProvider>
             </UserProfileProvider>
           </AuthProvider>
         </ThemeProvider>

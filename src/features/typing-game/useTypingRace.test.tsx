@@ -299,6 +299,103 @@ describe("useTypingRace — practiceMode", () => {
   });
 });
 
+// ── Completion race-condition guard ──────────────────────────────────────────
+// Verifies that the timer and data-broadcast intervals stop immediately when
+// the last character is typed, so they cannot send stale isCompleted:false
+// messages that would overwrite the rank image on other clients.
+
+describe("useTypingRace — completion race-condition guard", () => {
+  beforeEach(() => {
+    vi.useFakeTimers({
+      toFake: ['setTimeout', 'clearTimeout', 'setInterval', 'clearInterval', 'Date'],
+    });
+    sendSharedData = vi.fn();
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+    cleanup();
+  });
+
+  it("timeLeft does not decrease after completion", () => {
+    render(<TestHarness roomParagraph="hi" />);
+
+    // advance 5s so timeLeft drops from 60 to 55
+    act(() => { vi.advanceTimersByTime(5000); });
+    expect(screen.getByTestId("time-left").textContent).toBe("55");
+
+    // complete the race
+    typeChar("h");
+    typeChar("i");
+    expect(screen.getByTestId("completed").textContent).toBe("true");
+
+    const timeAfterCompletion = screen.getByTestId("time-left").textContent;
+
+    // advance several more seconds
+    act(() => { vi.advanceTimersByTime(5000); });
+
+    // time must not have changed
+    expect(screen.getByTestId("time-left").textContent).toBe(timeAfterCompletion);
+  });
+
+  it("wpm does not change after completion", () => {
+    render(<TestHarness roomParagraph="hi" />);
+
+    act(() => { vi.advanceTimersByTime(2000); });
+
+    typeChar("h");
+    typeChar("i");
+    expect(screen.getByTestId("completed").textContent).toBe("true");
+
+    const wpmAfterCompletion = screen.getByTestId("wpm").textContent;
+
+    act(() => { vi.advanceTimersByTime(5000); });
+
+    expect(screen.getByTestId("wpm").textContent).toBe(wpmAfterCompletion);
+  });
+
+  it("data interval stops broadcasting after completion", () => {
+    render(<TestHarness roomParagraph="ab" />);
+
+    // Clear initial broadcasts
+    act(() => { vi.advanceTimersByTime(100); });
+    sendSharedData.mockClear();
+
+    typeChar("a");
+    typeChar("b");
+    expect(screen.getByTestId("completed").textContent).toBe("true");
+
+    // The completion effect fires one final broadcast with isCompleted:true
+    sendSharedData.mockClear();
+
+    // Advance several intervals — no further calls expected
+    act(() => { vi.advanceTimersByTime(500); });
+
+    const calls = sendSharedData.mock.calls;
+    for (const [payload] of calls) {
+      // Any calls that did happen (completion effect) must have isCompleted:true
+      expect((payload as { isCompleted: boolean }).isCompleted).toBe(true);
+    }
+  });
+
+  it("final broadcast after completion has isCompleted:true and mistakes:0", () => {
+    render(<TestHarness roomParagraph="hi" />);
+
+    typeChar("h");
+    typeChar("i");
+
+    // flush all microtasks / effects
+    act(() => { vi.advanceTimersByTime(0); });
+
+    const calls = sendSharedData.mock.calls;
+    const completionCall = calls.findLast(
+      ([payload]) => (payload as { isCompleted: boolean }).isCompleted === true
+    );
+    expect(completionCall).toBeDefined();
+    expect(completionCall![0].mistakes).toBe(0);
+  });
+});
+
 // ── snapshot ─────────────────────────────────────────────────────────────────
 
 describe("useTypingRace — snapshot", () => {

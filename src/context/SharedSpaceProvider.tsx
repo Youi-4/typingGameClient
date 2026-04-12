@@ -31,6 +31,7 @@ export function SharedSpaceProvider({ children }: SharedSpaceProviderProps) {
   const [roomSize, setRoomSize] = useState<number | null>(null);
   const [myUser, setmyUser] = useState<string>("");
   const [guest, setGuest] = useState<boolean>(true);
+  const [isChallenge, setIsChallenge] = useState<boolean>(false);
 
   useEffect(() => {
     roomIdRef.current = roomId;
@@ -173,7 +174,7 @@ export function SharedSpaceProvider({ children }: SharedSpaceProviderProps) {
       sharedData, sendSharedData, leaveRoom, scheduleLeaveRoom, cancelScheduledLeaveRoom,
       connected, roomId, setRoomId,
       roomParagraph, roomStatus, namespace, setNamespace, characterNumber,
-      setRoomSize, roomSize, myUser, guest,
+      setRoomSize, roomSize, myUser, guest, isChallenge, setIsChallenge,
     }}>
       {children}
     </SharedSpaceContext.Provider>

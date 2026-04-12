@@ -9,7 +9,7 @@ function Home() {
   const navigate = useNavigate();
   const [roomInput, setRoomInput] = useState("");
   const [joiningGame, setJoiningGame] = useState(false);
-  const [roomSizeInput, setRoomSizeInput] = useState(1);
+  const [roomSizeInput, setRoomSizeInput] = useState(2);
   const [generatedRoom, setGeneratedRoom] = useState("");
   const [showPrivate, setShowPrivate] = useState(false);
   const hasCreated = useRef(false);

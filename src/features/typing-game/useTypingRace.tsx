@@ -44,6 +44,10 @@ export function useTypingRace({
   const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const gameStartTimeRef = useRef<number | null>(null);
   const sendSharedDataRef = useRef(sendSharedData);
+  // Set synchronously the moment the last character is typed so that the
+  // timer and data intervals don't send a stale (isCompleted: false) message
+  // in the gap between setState and the React effect cleanup.
+  const isCompletedRef = useRef(false);
   const typeDataRef = useRef<TypingRaceSnapshot>({
     totalMistakes: 0,
     WPM: 0,
@@ -125,6 +129,7 @@ export function useTypingRace({
     typeDataRef.current = resetSnapshot;
     wpmHistoryRef.current = [];
     gameStartTimeRef.current = null;
+    isCompletedRef.current = false;
 
     if (typingTimeoutRef.current) {
       clearTimeout(typingTimeoutRef.current);
@@ -155,6 +160,7 @@ export function useTypingRace({
     }
 
     const dataInterval = setInterval(() => {
+      if (isCompletedRef.current) return;
       sendSharedDataRef.current(typeDataRef.current);
     }, 100);
 
@@ -171,6 +177,11 @@ export function useTypingRace({
     }
 
     const timerInterval = setInterval(() => {
+      if (isCompletedRef.current) {
+        clearInterval(timerInterval);
+        return;
+      }
+
       const elapsed = Math.floor((Date.now() - gameStartTimeRef.current!) / 1000);
 
       if (practiceMode) {
@@ -256,6 +267,7 @@ export function useTypingRace({
       } else {
         setIsTyping(false);
         if (currentMistakes === 0 && charIndex + 1 >= roomParagraph.length) {
+          isCompletedRef.current = true;
           setIsCompleted(true);
         }
       }

@@ -1,9 +1,10 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useQueryClient } from "@tanstack/react-query";
 
 import "./styles.css";
 import { useSharedSpace } from "./context/useSharedSpace";
-import { createRoom, getStatsByUsername, updateStats } from "./services/apiGeneral";
+import { createRoom, getStatsByUsername, saveRaceHistory, updateStats } from "./services/apiGeneral";
 import { CountdownBanner } from "./features/typing-game/CountdownBanner";
 import { RaceTrack } from "./features/typing-game/RaceTrack";
 import { ResultsPanel } from "./features/typing-game/ResultsPanel";
@@ -13,6 +14,8 @@ import type { StatsDto } from "./types/api";
 
 function SpeedTypingGame() {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
+
   const {
     sharedData,
     sendSharedData,
@@ -28,6 +31,7 @@ function SpeedTypingGame() {
     setRoomSize,
     myUser,
     guest,
+    isChallenge,
   } = useSharedSpace();
 
   const [assignedRanks, setAssignedRanks] = useState<Record<string, string>>({});
@@ -86,14 +90,20 @@ function SpeedTypingGame() {
       return;
     }
 
-    updateStats(typingRace.wpm, won)
-      .then(() => {
-        setPlayerStatsCache((current) => {
-          const next = { ...current };
-          delete next[myUser];
-          return next;
-        });
-      })
+    if (!isChallenge) {
+      updateStats(typingRace.wpm, won)
+        .then(() => {
+          setPlayerStatsCache((current) => {
+            const next = { ...current };
+            delete next[myUser];
+            return next;
+          });
+        })
+        .catch(console.error);
+    }
+
+    saveRaceHistory(typingRace.wpm, typingRace.accuracy, isChallenge ? 'challenge' : 'multiplayer')
+      .then(() => queryClient.invalidateQueries({ queryKey: ['raceHistory'] }))
       .catch(console.error);
   }, [guest, myUser, playerEntries, typingRace.isCompleted, typingRace.timeLeft, typingRace.wpm]);
 

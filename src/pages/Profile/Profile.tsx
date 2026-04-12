@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { useAuthContext } from "../../context/useAuthContext";
 import { useUserProfileContext } from "../../context/useUserProfileContext";
+import { useNotifications } from "../../context/useNotifications";
 import { LetterAvatar } from "../../components/LetterAvatar";
 import "./Profile.css";
 
@@ -14,6 +15,7 @@ const COLOR_PALETTE = [
 function Profile() {
   const { user } = useAuthContext();
   const { profile, isSettingProfile, handleProfileSelection } = useUserProfileContext();
+  const { acceptsChallenges, setAcceptsChallenges } = useNotifications();
 
   const [bio, setBio] = useState("");
   const [selectedColor, setSelectedColor] = useState("");
@@ -79,6 +81,24 @@ function Profile() {
                 type="button"
               />
             ))}
+          </div>
+        </div>
+
+        <div className="profile-section">
+          <label className="profile-field-label">Race Challenges</label>
+          <div className="profile-toggle-row">
+            <span className="profile-toggle-desc">
+              Allow other players to challenge you to a race from your public profile.
+            </span>
+            <button
+              type="button"
+              role="switch"
+              aria-checked={acceptsChallenges}
+              className={`profile-toggle${acceptsChallenges ? " profile-toggle--on" : ""}`}
+              onClick={() => setAcceptsChallenges(!acceptsChallenges)}
+            >
+              <span className="profile-toggle-thumb" />
+            </button>
           </div>
         </div>
 

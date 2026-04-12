@@ -31,9 +31,26 @@ interface RaceTrackProps {
   hideCharacterOnComplete?: boolean;
 }
 
-function getPlayerProgress(item: SharedMessage, senderId: string, settledSenders: Set<string>) {
+// Maps rank image filename to a settled track position so completed players
+// spread out and don't stack on top of each other.
+const RANK_SETTLED_POS: Record<string, number> = {
+  "/1st.png": 5,
+  "/2nd.png": 13,
+  "/3rd.png": 21,
+  "/4th.png": 29,
+  "/5th.png": 37,
+  "/6th.png": 45,
+};
+
+function getPlayerProgress(
+  item: SharedMessage,
+  senderId: string,
+  settledSenders: Set<string>,
+  assignedRanks: Record<string, string>,
+) {
   if (item.typeObject.isCompleted && settledSenders.has(senderId)) {
-    return 5;
+    const rank = assignedRanks[senderId];
+    return rank ? (RANK_SETTLED_POS[rank] ?? 5) : 5;
   }
 
   if (item.typeObject.mistakes > 0) {
@@ -148,7 +165,7 @@ export function RaceTrack({
   return (
     <>
       {players.map(([senderId, item]) => {
-        const progress = getPlayerProgress(item, senderId, settledSenders);
+        const progress = getPlayerProgress(item, senderId, settledSenders, assignedRanks);
         const left = `${(progress / Math.max(roomParagraphLength, 1)) * 100 + 1}%`;
         const stats = playerStatsCache[senderId];
 

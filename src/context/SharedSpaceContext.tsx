@@ -46,6 +46,9 @@ export interface SharedSpaceContextType {
   roomSize: number | null;
   myUser: string;
   guest: boolean;
+  /** True when the current room was created via a direct player challenge. Stats are not recorded for challenge races. */
+  isChallenge: boolean;
+  setIsChallenge: (value: boolean) => void;
 }
 
 export const SharedSpaceContext = createContext<SharedSpaceContextType | undefined>(undefined);
