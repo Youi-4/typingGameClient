@@ -271,6 +271,9 @@ describe("useTypingRace — practiceMode", () => {
   it("counts up each second rather than down", () => {
     render(<TestHarness roomParagraph="hello" practiceMode />);
 
+    // type a character to start the timer (matches e2e behaviour)
+    fireEvent.change(screen.getByTestId("game-input"), { target: { value: "h" } });
+
     act(() => { vi.advanceTimersByTime(1000); });
     expect(screen.getByTestId("time-left").textContent).toBe("1");
 
@@ -388,8 +391,8 @@ describe("useTypingRace — completion race-condition guard", () => {
     act(() => { vi.advanceTimersByTime(0); });
 
     const calls = sendSharedData.mock.calls;
-    const completionCall = calls.findLast(
-      ([payload]) => (payload as { isCompleted: boolean }).isCompleted === true
+    const completionCall = [...calls].reverse().find(
+      ([payload]: [TypeObject]) => (payload as { isCompleted: boolean }).isCompleted === true
     );
     expect(completionCall).toBeDefined();
     expect(completionCall![0].mistakes).toBe(0);

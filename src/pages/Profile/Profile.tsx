@@ -20,9 +20,12 @@ function Profile() {
   const [bio, setBio] = useState("");
   const [selectedColor, setSelectedColor] = useState("");
 
+  // Initialise controlled inputs once the async profile data arrives.
   useEffect(() => {
     if (profile) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setBio(profile.bio ?? "");
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setSelectedColor(profile.avatar_color ?? "");
     }
   }, [profile]);

@@ -53,6 +53,7 @@ export function SharedSpaceProvider({ children }: SharedSpaceProviderProps) {
     let cancelled = false;
 
     const connectSocket = async () => {
+      if (!namespace) return;
       try {
         const socketToken = isAuthenticated
           ? await fetchSocketToken()

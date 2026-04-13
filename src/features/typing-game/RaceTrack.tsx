@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 
 import type { SharedMessage } from "../../context/SharedSpaceContext";
 import type { StatsDto } from "../../types/api";
@@ -99,8 +99,24 @@ export function RaceTrack({
   // Always-current snapshot for the animation interval (no stale closure)
   const playersRef = useRef(players);
   const assignedRanksRef = useRef(assignedRanks);
-  playersRef.current = players;
-  assignedRanksRef.current = assignedRanks;
+  // Update refs and anim-state together in useLayoutEffect so both are
+  // committed before requestAnimationFrame can fire. If prevAnimTypeRef were
+  // updated in useEffect instead, RAF could wake between the two effects and
+  // still see the old "run" type for a just-completed player, overwriting the
+  // rank-image src.
+  useLayoutEffect(() => {
+    playersRef.current = players;
+    assignedRanksRef.current = assignedRanks;
+
+    for (const [senderId, item] of players) {
+      const newType = getAnimType(item);
+      if (newType !== prevAnimTypeRef.current[senderId]) {
+        prevAnimTypeRef.current[senderId] = newType;
+        frameCountersRef.current[senderId] = 0;
+        lastFrameTimeRef.current[senderId] = 0;
+      }
+    }
+  });
 
   useEffect(() => {
     const allFrames = [...WALK_FRAMES, ...RUN_FRAMES, IDLE_FRAME];
@@ -116,19 +132,6 @@ export function RaceTrack({
       images.length = 0;
     };
   }, []);
-
-  // When a player's animation state changes (server-driven), reset counters so
-  // the new animation starts cleanly from frame 0 with no carry-over delay.
-  useEffect(() => {
-    for (const [senderId, item] of players) {
-      const newType = getAnimType(item);
-      if (newType !== prevAnimTypeRef.current[senderId]) {
-        prevAnimTypeRef.current[senderId] = newType;
-        frameCountersRef.current[senderId] = 0;
-        lastFrameTimeRef.current[senderId] = 0;
-      }
-    }
-  }, [players]);
 
   // Animation loop via requestAnimationFrame — runs every display frame (~16ms)
   // but only advances a sprite when enough time has elapsed for that animation

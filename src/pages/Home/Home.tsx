@@ -23,7 +23,7 @@ function Home() {
   useEffect(() => {
     if (hasCreated.current) return;
     hasCreated.current = true;
-    generatePrivateRoom().catch(console.error);
+    createRoom("private").then(setGeneratedRoom).catch(console.error);
   }, []);
 
   const createLobby = async () => {

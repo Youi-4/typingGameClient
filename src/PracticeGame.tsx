@@ -11,7 +11,7 @@ import { saveRaceHistory } from "./services/apiGeneral";
 import type { TypeObject } from "./context/SharedSpaceContext";
 
 const SOLO_ID = "solo";
-const noop = (_: TypeObject) => {};
+const noop: (typeObject: TypeObject) => void = () => {};
 
 interface PracticeRoundProps {
   paragraph: string;

@@ -61,6 +61,8 @@ export function useTypingRace({
 
   const [inputValue, setInputValue] = useState("");
   const [timeLeft, setTimeLeft] = useState(practiceMode ? 0 : MAX_TIME);
+  const [hasStarted, setHasStarted] = useState(!practiceMode);
+  const hasStartedRef = useRef(!practiceMode);
   const [charIndex, setCharIndex] = useState(0);
   const [mistakes, setMistakes] = useState(0);
   const [totalMistakes, setTotalMistakes] = useState(0);
@@ -168,7 +170,7 @@ export function useTypingRace({
   }, [isCompleted, isInputDisabled]);
 
   useEffect(() => {
-    if (isInputDisabled || isCompleted) {
+    if (isInputDisabled || isCompleted || !hasStarted) {
       return;
     }
 
@@ -206,7 +208,7 @@ export function useTypingRace({
     }, 1000);
 
     return () => clearInterval(timerInterval);
-  }, [isCompleted, isInputDisabled]);
+  }, [isCompleted, isInputDisabled, practiceMode, hasStarted]);
 
   const handleKeyDown = (event: KeyboardEvent<HTMLInputElement>) => {
     const characters = getCharacters();
@@ -238,6 +240,12 @@ export function useTypingRace({
     const characters = getCharacters();
     const typedChar = event.target.value.slice(-1);
     setInputValue("");
+
+    if (practiceMode && !hasStartedRef.current) {
+      hasStartedRef.current = true;
+      gameStartTimeRef.current = Date.now();
+      setHasStarted(true);
+    }
 
     if (charIndex < characters.length && (practiceMode || timeLeft > 0)) {
       const currentChar = characters[charIndex].innerText;

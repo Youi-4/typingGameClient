@@ -61,7 +61,7 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
           setIncomingChallenge(data);
         });
 
-        socket.on("challenge-accepted", ({ roomId: _roomId }: { roomId: string }) => {
+        socket.on("challenge-accepted", () => {
           // The challenger is already in the room — they navigated there when they
           // sent the challenge. Just clear the pending state and notify the user.
           // Do NOT call setRoomId here; that would wipe roomParagraph via resetRoomState.

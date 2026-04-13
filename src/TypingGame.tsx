@@ -105,7 +105,7 @@ function SpeedTypingGame() {
     saveRaceHistory(typingRace.wpm, typingRace.accuracy, isChallenge ? 'challenge' : 'multiplayer')
       .then(() => queryClient.invalidateQueries({ queryKey: ['raceHistory'] }))
       .catch(console.error);
-  }, [guest, myUser, playerEntries, typingRace.isCompleted, typingRace.timeLeft, typingRace.wpm]);
+  }, [guest, isChallenge, myUser, playerEntries, queryClient, typingRace.accuracy, typingRace.isCompleted, typingRace.timeLeft, typingRace.wpm]);
 
   useEffect(() => {
     for (const [senderId, item] of playerEntries) {
@@ -168,12 +168,16 @@ function SpeedTypingGame() {
   };
 
   const playAgain = async (): Promise<void> => {
-    const isPublicGame = namespace === "/public_game";
-    const nextRoomId = await createRoom(isPublicGame ? "public" : "private");
-    setNamespace(namespace);
-    setRoomSize(isPublicGame ? null : roomSize);
-    setRoomId(nextRoomId);
-    navigate(`/Play/${nextRoomId}`);
+    try {
+      const isPublicGame = namespace === "/public_game";
+      const nextRoomId = await createRoom(isPublicGame ? "public" : "private");
+      setNamespace(namespace);
+      setRoomSize(isPublicGame ? null : roomSize);
+      setRoomId(nextRoomId);
+      navigate(`/Play/${nextRoomId}`);
+    } catch (err) {
+      console.error("Failed to create new room:", err);
+    }
   };
 
   return (

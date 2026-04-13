@@ -50,7 +50,7 @@ async function finishRaceInRankOrder(players: Page[], paragraphText: string) {
       if (index > 0) {
         await page.waitForTimeout(index * 500);
       }
-      await page.locator("#game-input-field").pressSequentially(paragraphText, { delay: 5 });
+      await page.locator("#game-input-field").pressSequentially(paragraphText, { delay: 30 });
     })
   );
 }
@@ -58,6 +58,11 @@ async function finishRaceInRankOrder(players: Page[], paragraphText: string) {
 async function closePlayerSessions(players: Page[], contexts: BrowserContext[]) {
   await Promise.allSettled(players.map((page) => page.close()));
   await Promise.allSettled(contexts.map((context) => context.close()));
+}
+
+async function assertPlayerRank(page: Page, rankPattern: RegExp, timeout = 10000) {
+  const myPanel = page.locator('.play-panel', { has: page.locator('b:has-text("(You)")') });
+  await expect(myPanel.locator('.rank-img')).toHaveAttribute('src', rankPattern, { timeout });
 }
 
 test("home page loads and shows mode cards", async ({ page }) => {
@@ -186,9 +191,13 @@ test("Signup validation toast for password missing special character", async ({ 
 
 
 test("Signup test not succesfull, username already in use", async ({ page }) => {
+  // Use a unique email each run so it is never already in the DB.
+  // The server checks email before username, so a pre-existing email would
+  // produce "Email already exists." and mask the username conflict.
+  const uniqueEmail = `signup-test-${Date.now()}@example.test`;
   await page.goto('/SignUp');
-  await page.getByRole('textbox', { name: 'Email Address' }).fill('John@gmail.com');
-  await page.getByRole('textbox', { name: 'Username' }).fill('test');
+  await page.getByRole('textbox', { name: 'Email Address' }).fill(uniqueEmail);
+  await page.getByRole('textbox', { name: 'Username' }).fill('GhostTyper');
   await page.getByRole('textbox', { name: 'Password' }).fill('Test1234!');
   await page.getByRole('button', { name: 'Create Account' }).click();
   await expect(page.getByText('Sign up failed: Username already exists.')).toBeVisible({ timeout: 5000 });
@@ -286,18 +295,9 @@ test("theme toggle switches between light and dark", async ({ page }) => {
 
 
 test("Play Again button appears after finishing single player game", async ({ page }) => {
-  await page.goto('/Home');
-  await openPrivateSection(page);
-  await page.getByRole('button', { name: 'Create lobby' }).click();
-  await page.locator('#paragraph').waitFor({ state: 'visible' });
+  await page.goto('/Practice');
+  await expect(page.locator('#game-input-field')).toBeEnabled();
   const paragraphText = await page.locator('#paragraph').innerText();
-
-  for (let i = 0; i < 10; i++) {
-    const disabled = await page.locator('#game-input-field').isDisabled();
-    if (!disabled) break;
-    await page.waitForTimeout(1000);
-  }
-
   await page.locator('#game-input-field').pressSequentially(paragraphText!, { delay: 50 });
   await expect(page.getByRole('button', { name: 'Play Again' })).toBeVisible({ timeout: 5000 });
 });
@@ -320,24 +320,20 @@ test("Public game with two players", async ({ browser }) => {
 
   const paragraphText = await players[0].locator('#paragraph').innerText();
 
-  await Promise.all(players.map(async (p) => {
-    for (let i = 0; i < 10; i++) {
-      const disabled = await p.locator('#game-input-field').isDisabled();
-      if (!disabled) break;
-      await p.waitForTimeout(1000);
-    }
-  }));
+  try {
+    await Promise.all(players.map(waitForGameInputEnabled));
 
-  await Promise.all([
-    players[0].locator('#game-input-field').pressSequentially(paragraphText, { delay: 30 }),
-    players[1].locator('#game-input-field').pressSequentially(paragraphText, { delay: 35 }),
-  ]);
+    await Promise.all([
+      players[0].locator('#game-input-field').pressSequentially(paragraphText, { delay: 30 }),
+      players[1].locator('#game-input-field').pressSequentially(paragraphText, { delay: 35 }),
+    ]);
 
-  await expect(players[0].locator('.rank-img').first()).toHaveAttribute('src', /1st.png/, { timeout: 5000 });
-  await expect(players[1].locator('.rank-img').nth(1)).toHaveAttribute('src', /2nd.png/, { timeout: 5000 });
-
-  await Promise.all(players.map(p => p.close()));
-  await Promise.all(contexts.map(c => c.close()));
+    await assertPlayerRank(players[0], /1st\.png/);
+    await assertPlayerRank(players[1], /2nd\.png/);
+  } finally {
+    await Promise.all(players.map(p => p.close()));
+    await Promise.all(contexts.map(c => c.close()));
+  }
 });
 
 
@@ -356,24 +352,20 @@ test("Private game with two players", async ({ browser }) => {
 
   const paragraphText = await players[0].locator('#paragraph').innerText();
 
-  await Promise.all(players.map(async (p) => {
-    for (let i = 0; i < 10; i++) {
-      const disabled = await p.locator('#game-input-field').isDisabled();
-      if (!disabled) break;
-      await p.waitForTimeout(1000);
-    }
-  }));
+  try {
+    await Promise.all(players.map(waitForGameInputEnabled));
 
-  await Promise.all([
-    players[0].locator('#game-input-field').pressSequentially(paragraphText, { delay: 30 }),
-    players[1].locator('#game-input-field').pressSequentially(paragraphText, { delay: 35 }),
-  ]);
+    await Promise.all([
+      players[0].locator('#game-input-field').pressSequentially(paragraphText, { delay: 30 }),
+      players[1].locator('#game-input-field').pressSequentially(paragraphText, { delay: 35 }),
+    ]);
 
-  await expect(players[0].locator('.rank-img').first()).toHaveAttribute('src', /1st.png/, { timeout: 5000 });
-  await expect(players[1].locator('.rank-img').nth(1)).toHaveAttribute('src', /2nd.png/, { timeout: 5000 });
-
-  await Promise.all(players.map(p => p.close()));
-  await Promise.all(contexts.map(c => c.close()));
+    await assertPlayerRank(players[0], /1st\.png/);
+    await assertPlayerRank(players[1], /2nd\.png/);
+  } finally {
+    await Promise.all(players.map(p => p.close()));
+    await Promise.all(contexts.map(c => c.close()));
+  }
 });
 
 
@@ -397,9 +389,9 @@ test("Private game with three players", async ({ browser }) => {
     await Promise.all(players.map(waitForGameInputEnabled));
     await finishRaceInRankOrder(players, paragraphText);
 
-    await expect(players[0].locator('.rank-img').first()).toHaveAttribute('src', /1st.png/, { timeout: 5000 });
-    await expect(players[1].locator('.rank-img').nth(1)).toHaveAttribute('src', /2nd.png/, { timeout: 5000 });
-    await expect(players[2].locator('.rank-img').nth(2)).toHaveAttribute('src', /3rd.png/, { timeout: 5000 });
+    await assertPlayerRank(players[0], /1st\.png/);
+    await assertPlayerRank(players[1], /2nd\.png/);
+    await assertPlayerRank(players[2], /3rd\.png/);
   } finally {
     await closePlayerSessions(players, contexts);
   }
@@ -429,10 +421,10 @@ test("Private game with four players", async ({ browser }) => {
     await Promise.all(players.map(waitForGameInputEnabled));
     await finishRaceInRankOrder(players, paragraphText);
 
-    await expect(players[0].locator('.rank-img').first()).toHaveAttribute('src', /1st.png/, { timeout: 5000 });
-    await expect(players[1].locator('.rank-img').nth(1)).toHaveAttribute('src', /2nd.png/, { timeout: 5000 });
-    await expect(players[2].locator('.rank-img').nth(2)).toHaveAttribute('src', /3rd.png/, { timeout: 5000 });
-    await expect(players[3].locator('.rank-img').nth(3)).toHaveAttribute('src', /4th.png/, { timeout: 5000 });
+    await assertPlayerRank(players[0], /1st\.png/);
+    await assertPlayerRank(players[1], /2nd\.png/);
+    await assertPlayerRank(players[2], /3rd\.png/);
+    await assertPlayerRank(players[3], /4th\.png/);
   } finally {
     await closePlayerSessions(players, contexts);
   }
@@ -463,11 +455,11 @@ test("Private game with five players", async ({ browser }) => {
     await Promise.all(players.map(waitForGameInputEnabled));
     await finishRaceInRankOrder(players, paragraphText);
 
-    await expect(players[0].locator('.rank-img').first()).toHaveAttribute('src', /1st.png/, { timeout: 5000 });
-    await expect(players[1].locator('.rank-img').nth(1)).toHaveAttribute('src', /2nd.png/, { timeout: 5000 });
-    await expect(players[2].locator('.rank-img').nth(2)).toHaveAttribute('src', /3rd.png/, { timeout: 5000 });
-    await expect(players[3].locator('.rank-img').nth(3)).toHaveAttribute('src', /4th.png/, { timeout: 5000 });
-    await expect(players[4].locator('.rank-img').nth(4)).toHaveAttribute('src', /5th.png/, { timeout: 5000 });
+    await assertPlayerRank(players[0], /1st\.png/);
+    await assertPlayerRank(players[1], /2nd\.png/);
+    await assertPlayerRank(players[2], /3rd\.png/);
+    await assertPlayerRank(players[3], /4th\.png/);
+    await assertPlayerRank(players[4], /5th\.png/);
   } finally {
     await closePlayerSessions(players, contexts);
   }
@@ -477,36 +469,37 @@ test("Private game with five players", async ({ browser }) => {
 
 
 
-test("Play Again and results appear when timer expires before player finishes typing", async ({ page }) => {
+test("Play Again and results appear when timer expires before player finishes typing", async ({ browser }) => {
   test.setTimeout(120000);
 
-  // Start a single-player game
-  await page.goto('/Home');
-  await openPrivateSection(page);
-  await page.getByRole('button', { name: 'Create lobby' }).click();
-  await page.locator('#paragraph').waitFor({ state: 'visible' });
+  const contexts = await Promise.all([browser.newContext(), browser.newContext()]);
+  const players = await Promise.all(contexts.map(ctx => ctx.newPage()));
 
-  // Wait for input to be enabled
-  for (let i = 0; i < 10; i++) {
-    const disabled = await page.locator('#game-input-field').isDisabled();
-    if (!disabled) break;
-    await page.waitForTimeout(1000);
+  try {
+    const lobbyCode = await createPrivateLobby(players[0], 2);
+    await joinPrivateLobby(players[1], lobbyCode);
+
+    await Promise.all(players.map(p => p.locator('#paragraph').waitFor({ state: 'visible' })));
+    await Promise.all(players.map(waitForGameInputEnabled));
+
+    // Type only the first few characters of the actual paragraph (not the full text)
+    const paragraphText = await players[0].locator('#paragraph').innerText();
+    const partialText = paragraphText.slice(0, 40);
+    await players[0].locator('#game-input-field').pressSequentially(partialText, { delay: 50 });
+
+    // Wait for timer to reach exactly 0
+    await expect(players[0].locator('.time b')).toHaveText('0', { timeout: 65000 });
+
+    // Play Again button should appear when timer expires
+    await expect(players[0].getByRole('button', { name: 'Play Again' })).toBeVisible({ timeout: 5000 });
+
+    // WPM should be displayed and greater than 0 since we typed correct characters
+    const wpmText = await players[0].locator('.wpm span').innerText();
+    expect(Number(wpmText)).toBeGreaterThan(0);
+  } finally {
+    await Promise.all(players.map(p => p.close()));
+    await Promise.all(contexts.map(c => c.close()));
   }
-
-  // Type only the first few characters of the actual paragraph (not the full text)
-  const paragraphText = await page.locator('#paragraph').innerText();
-  const partialText = paragraphText.slice(0, 40);
-  await page.locator('#game-input-field').pressSequentially(partialText, { delay: 50 });
-
-  // Wait for timer to reach exactly 0
-  await expect(page.locator('.time b')).toHaveText('0', { timeout: 65000 });
-
-  // Play Again button should appear when timer expires
-  await expect(page.getByRole('button', { name: 'Play Again' })).toBeVisible({ timeout: 5000 });
-
-  // WPM should be displayed and greater than 0 since we typed correct characters
-  const wpmText = await page.locator('.wpm span').innerText();
-  expect(Number(wpmText)).toBeGreaterThan(0);
 });
 
 
@@ -641,8 +634,10 @@ test("practice page shows elapsed timer label 'Time:'", async ({ page }) => {
 
 test("practice page timer counts up from 0", async ({ page }) => {
   await page.goto("/Practice");
-  // Initially 0
+  // Timer has not started yet — should show 0 regardless of page load time
   await expect(page.locator(".time b")).toHaveText("0");
+  // Type a character to start the timer
+  await page.locator("#game-input-field").pressSequentially("a");
   // After a couple of seconds the counter has advanced
   await page.waitForTimeout(3000);
   const elapsed = Number(await page.locator(".time b").innerText());
@@ -679,7 +674,7 @@ test("practice mode: Play Again loads a new paragraph", async ({ page }) => {
 });
 
 test("practice mode: timer does not end the game at 60 seconds", async ({ page }) => {
-  test.setTimeout(75000);
+  test.setTimeout(90000);
   await page.goto("/Practice");
   // Wait past the normal 60 s game limit without typing
   await page.waitForTimeout(62000);

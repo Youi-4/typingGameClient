@@ -41,8 +41,9 @@ function Navigation() {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // Auto-open the notification dropdown when a challenge arrives
+  // Auto-open the notification dropdown when a challenge arrives.
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     if (incomingChallenge) setNotifOpen(true);
   }, [incomingChallenge]);
 

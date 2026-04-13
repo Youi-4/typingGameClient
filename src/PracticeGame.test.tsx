@@ -2,6 +2,18 @@ import { render, screen, fireEvent, act, cleanup } from "@testing-library/react"
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import PracticeGame from "./PracticeGame";
 
+vi.mock("./context/useAuthContext", () => ({
+  useAuthContext: () => ({ user: null, isAuthenticated: false }),
+}));
+
+vi.mock("@tanstack/react-query", async () => {
+  const actual = await vi.importActual<typeof import("@tanstack/react-query")>("@tanstack/react-query");
+  return {
+    ...actual,
+    useQueryClient: () => ({ invalidateQueries: vi.fn() }),
+  };
+});
+
 beforeEach(() => {
   vi.useFakeTimers({
     toFake: ['setTimeout', 'clearTimeout', 'setInterval', 'clearInterval', 'Date'],
@@ -142,6 +154,8 @@ describe("PracticeGame — play again", () => {
 describe("PracticeGame — timer counts up", () => {
   it("elapsed time increases while typing", () => {
     render(<PracticeGame />);
+    // type a character to start the timer (matches e2e behaviour)
+    fireEvent.change(getInput(), { target: { value: "a" } });
     act(() => { vi.advanceTimersByTime(3000); });
     const timeValue = document.querySelector(".time b");
     // After ~3s the elapsed counter should be >= 1
