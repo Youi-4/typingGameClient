@@ -17,39 +17,36 @@ function Navigation() {
   const navigate = useNavigate();
 
   const [dropdownOpen, setDropdownOpen] = useState(false);
-  const [notifOpen, setNotifOpen] = useState(false);
+  const [userToggledNotif, setUserToggledNotif] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const notifRef = useRef<HTMLDivElement>(null);
 
   const { incomingChallenge, respondToChallenge } = useNotifications();
   const { setNamespace, setRoomId, setRoomSize, setIsChallenge } = useSharedSpace();
 
+  // Auto-show notification panel when a challenge arrives; keep it visible
+  // as long as the challenge is pending (clicking outside won't dismiss it).
+  const notifOpen = userToggledNotif || !!incomingChallenge;
+
   const active = (path: string) =>
     pathname.toLowerCase().startsWith(path.toLowerCase()) ? 'active' : '';
 
-  // Close dropdowns on outside click
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
       if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
         setDropdownOpen(false);
       }
       if (notifRef.current && !notifRef.current.contains(e.target as Node)) {
-        setNotifOpen(false);
+        setUserToggledNotif(false);
       }
     };
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // Auto-open the notification dropdown when a challenge arrives.
-  useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    if (incomingChallenge) setNotifOpen(true);
-  }, [incomingChallenge]);
-
   const handleAccept = () => {
     if (!incomingChallenge) return;
-    setNotifOpen(false);
+    setUserToggledNotif(false);
     setNamespace("/private_game");
     setRoomSize(2);
     setIsChallenge(true);
@@ -59,7 +56,7 @@ function Navigation() {
   };
 
   const handleDecline = () => {
-    setNotifOpen(false);
+    setUserToggledNotif(false);
     respondToChallenge(false);
   };
 
@@ -93,7 +90,7 @@ function Navigation() {
             <div className="nav-notif-wrap" ref={notifRef}>
               <button
                 className="nav-icon-btn nav-notif-btn"
-                onClick={() => setNotifOpen(o => !o)}
+                onClick={() => setUserToggledNotif(o => !o)}
                 title="Notifications"
                 aria-label={incomingChallenge ? '1 new notification' : 'Notifications'}
               >

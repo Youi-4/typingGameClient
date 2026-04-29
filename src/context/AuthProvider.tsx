@@ -5,7 +5,7 @@ import {
 import type { ReactNode } from "react"
 import { fetchUserAuth } from "../services/authApi";
 import { loginUser, logoutUser } from "../services/LoginApi";
-import { setupTokenRefresh, clearTokenRefresh, manualTokenRefresh } from "../utils/tokenRefresh";
+import { setupTokenRefresh, clearTokenRefresh, refreshAuthToken } from "../utils/tokenRefresh";
 import { useMutation } from "@tanstack/react-query";
 import { AuthContext } from "./AuthContext";
 import type { User, LoginValues } from "./AuthContext";
@@ -76,7 +76,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 
       const authenticated = await checkAuth();
       if (authenticated) {
-        const refreshed = await manualTokenRefresh();
+        const refreshed = await refreshAuthToken();
         if (refreshed) {
           setupTokenRefresh();
         }

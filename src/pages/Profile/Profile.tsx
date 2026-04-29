@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Link } from "react-router-dom";
 import { useAuthContext } from "../../context/useAuthContext";
 import { useUserProfileContext } from "../../context/useUserProfileContext";
@@ -17,21 +17,14 @@ function Profile() {
   const { profile, isSettingProfile, handleProfileSelection } = useUserProfileContext();
   const { acceptsChallenges, setAcceptsChallenges } = useNotifications();
 
-  const [bio, setBio] = useState("");
-  const [selectedColor, setSelectedColor] = useState("");
+  // null means "user hasn't edited yet — fall back to saved profile value"
+  const [bioEdited, setBioEdited] = useState<string | null>(null);
+  const [colorEdited, setColorEdited] = useState<string | null>(null);
 
-  // Initialise controlled inputs once the async profile data arrives.
-  useEffect(() => {
-    if (profile) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setBio(profile.bio ?? "");
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setSelectedColor(profile.avatar_color ?? "");
-    }
-  }, [profile]);
+  const bio = bioEdited ?? profile?.bio ?? "";
+  const selectedColor = colorEdited ?? profile?.avatar_color ?? "";
 
   const username = user?.userName ?? "";
-  const previewColor = selectedColor || (profile?.avatar_color ?? undefined);
 
   const handleSave = () => {
     handleProfileSelection({
@@ -51,7 +44,7 @@ function Profile() {
         </div>
 
         <div className="profile-header">
-          <LetterAvatar username={username} avatarColor={previewColor} size={80} />
+          <LetterAvatar username={username} avatarColor={selectedColor || undefined} size={80} />
           <div className="profile-header-info">
             <h1 className="profile-username">{username}</h1>
             <p className="profile-username-label">Username · cannot be changed</p>
@@ -64,7 +57,7 @@ function Profile() {
             id="bio-input"
             className="profile-bio-input"
             value={bio}
-            onChange={(e) => setBio(e.target.value)}
+            onChange={(e) => setBioEdited(e.target.value)}
             placeholder="Tell others a little about yourself…"
             maxLength={200}
           />
@@ -79,7 +72,7 @@ function Profile() {
                 key={color}
                 className={`profile-color-swatch${selectedColor === color ? " selected" : ""}`}
                 style={{ backgroundColor: color }}
-                onClick={() => setSelectedColor(color)}
+                onClick={() => setColorEdited(color)}
                 title={color}
                 type="button"
               />

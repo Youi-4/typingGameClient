@@ -6,8 +6,3 @@ const apiClient = axios.create({
 });
 
 export default apiClient;
-
-// Rationale:
-// Creating a custom Axios instance for API calls
-// This instance is pre-configured with base settings like the base URL,
-// which can be reused across the application for making API requests.

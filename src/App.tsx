@@ -25,7 +25,7 @@ function App() {
                 <ErrorBoundary>
                   <AppRouter />
                 </ErrorBoundary>
-                <ReactQueryDevtools initialIsOpen={false} />
+                {import.meta.env.DEV && <ReactQueryDevtools initialIsOpen={false} />}
               </SharedSpaceProvider>
               </NotificationProvider>
             </UserProfileProvider>

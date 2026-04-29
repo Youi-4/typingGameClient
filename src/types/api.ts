@@ -32,10 +32,6 @@ export interface AuthStatusResponseDto {
   user: AuthUserDto;
 }
 
-export interface LoggedInUserResponseDto {
-  user: AuthUserDto;
-}
-
 export interface RefreshTokenResponseDto {
   success: boolean;
   message: string;
